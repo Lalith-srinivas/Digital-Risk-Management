@@ -214,7 +214,7 @@ export const api = {
     const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), options.timeout || 10000);
+    const timeout = setTimeout(() => controller.abort(), options.timeout || 45000);
 
     try {
       const response = await fetch(url, {
@@ -329,41 +329,139 @@ export const api = {
   async scanBrand(brandId, isDemo = true) {
     try {
       const data = await this.request(`/brands/${brandId}/scan?is_demo=${isDemo}`, {
-        method: 'POST'
+        method: 'POST',
+        timeout: 60000,
       });
-      return { data, isDemoData: false };
+      const normalizedFindings = (data.findings || []).map(normalizeFinding);
+      return {
+        data: {
+          ...data,
+          findings: normalizedFindings,
+        },
+        isDemoData: false,
+      };
     } catch (err) {
-      // Fallback demo scan simulation
-      const { brands, findings, scans } = getStoredDemoData();
+      console.warn('Backend brand scan request exception, checking stored findings:', err);
+      // Check if the backend already produced findings for this brand
+      try {
+        const res = await this.getFindings({ brandId });
+        if (res.data && res.data.length > 0) {
+          const brandRes = await this.getBrandById(brandId).catch(() => null);
+          const brandName = brandRes?.data?.name || 'Protected Brand';
+          return {
+            data: {
+              brand_id: brandId,
+              brand_name: brandName,
+              status: 'completed',
+              candidates_analyzed: res.data.length,
+              findings_generated: res.data.length,
+              social_analyzed: res.data.filter(f => (f.sourceType || f.source_type) === 'social').length,
+              apps_analyzed: res.data.filter(f => (f.sourceType || f.source_type) === 'app').length,
+              sources_checked: ['Twitter/X', 'Telegram', 'Instagram', 'Google Play Store', 'Apple App Store'],
+              findings: res.data,
+              is_demo: isDemo,
+              is_guest: false,
+            },
+            isDemoData: false,
+          };
+        }
+      } catch (innerErr) {
+        console.warn('Could not retrieve brand findings from backend:', innerErr);
+      }
+
+      // Dynamic brand-specific simulation fallback (never return hardcoded Apex Bank for a different brand)
+      const { brands, scans } = getStoredDemoData();
       const brand = brands.find(b => b.id === brandId) || brands[0];
+      const brandName = brand ? brand.name : 'Target Brand';
+      const slug = brandName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'brand';
+
+      const simFindings = [
+        normalizeFinding({
+          id: `find-dyn-${Date.now()}-1`,
+          brandId,
+          brandName,
+          candidateName: `${brandName} Support & Helpdesk`,
+          sourceType: 'social',
+          platform: 'Twitter/X',
+          candidateHandle: `@${slug}_support_desk`,
+          candidateUrl: `https://x.com/${slug}_support_desk`,
+          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=96',
+          riskScore: 89,
+          riskLevel: 'High',
+          reasons: [`Account claiming official support status for ${brandName} without verified organization badge`],
+          detectionDate: new Date().toISOString(),
+          reviewStatus: 'Needs Review',
+          isDemoData: true,
+        }),
+        normalizeFinding({
+          id: `find-dyn-${Date.now()}-2`,
+          brandId,
+          brandName,
+          candidateName: `${brandName} Mobile Pro (Unlocked)`,
+          sourceType: 'app',
+          platform: 'APK Repository / Unofficial Store',
+          candidateHandle: `com.unauthorized.${slug}.mod`,
+          candidateUrl: `https://apk-mirror-store.example/download/${slug}`,
+          avatarUrl: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=96',
+          developer: 'Unauthorized Mod Network',
+          packageId: `com.unauthorized.${slug}.mod`,
+          riskScore: 94,
+          riskLevel: 'High',
+          reasons: [`Package identifier mimics official ${brandName} banking or corporate namespace`],
+          detectionDate: new Date().toISOString(),
+          reviewStatus: 'Needs Review',
+          isDemoData: true,
+        }),
+        normalizeFinding({
+          id: `find-dyn-${Date.now()}-3`,
+          brandId,
+          brandName,
+          candidateName: `${brandName} Bonus & Community Rewards`,
+          sourceType: 'social',
+          platform: 'Telegram',
+          candidateHandle: `@${slug}_rewards_bot`,
+          candidateUrl: `https://t.me/${slug}_rewards_bot`,
+          avatarUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96',
+          riskScore: 80,
+          riskLevel: 'High',
+          reasons: [`Suspicious token giveaway channel soliciting credentials under ${brandName} mark`],
+          detectionDate: new Date().toISOString(),
+          reviewStatus: 'Needs Review',
+          isDemoData: true,
+        }),
+      ];
 
       const simScan = {
         id: `scan-${Date.now()}`,
-        brandName: brand ? brand.name : 'Target Brand',
+        brandName,
         type: 'Combined Surveillance Scan',
         target: 'Social & Mobile App Ecosystem',
         timestamp: new Date().toISOString(),
         duration: '18s',
         candidatesAnalyzed: 8,
-        findingsGenerated: 3,
+        findingsGenerated: simFindings.length,
         status: 'Completed',
-        isDemoData: true
+        isDemoData: true,
       };
 
-      const updatedScans = [simScan, ...scans];
-      saveStoredDemoData({ brands, findings, scans: updatedScans });
+      saveStoredDemoData({ brands, findings: simFindings, scans: [simScan, ...scans] });
 
       return {
         data: {
           brand_id: brandId,
-          brand_name: brand ? brand.name : 'Target Brand',
+          brand_name: brandName,
           status: 'completed',
           candidates_analyzed: 8,
-          findings_generated: 3,
+          findings_generated: simFindings.length,
+          social_analyzed: 5,
+          apps_analyzed: 3,
+          sources_checked: ['Twitter/X', 'Telegram', 'Instagram', 'Google Play Store', 'Apple App Store'],
           scans: [simScan],
-          findings: findings.slice(0, 3)
+          findings: simFindings,
+          is_demo: true,
+          is_guest: false,
         },
-        isDemoData: true
+        isDemoData: true,
       };
     }
   },
@@ -388,7 +486,7 @@ export const api = {
       const data = await this.request('/scan/guest', {
         method: 'POST',
         body: JSON.stringify(payload),
-        timeout: 30000,
+        timeout: 45000,
       });
 
       const normalizedFindings = (data.findings || []).map(normalizeFinding);
@@ -398,13 +496,65 @@ export const api = {
         isGuest: true,
       };
     } catch (err) {
-      console.warn('Backend guest scan failed, falling back to simulated analysis:', err);
-      const demoFindings = INITIAL_FINDINGS.map(f => normalizeFinding({
-        ...f,
-        brandName: payload.name,
-      }));
+      console.warn('Backend guest scan failed, falling back to dynamic simulated analysis:', err);
+      const brandName = payload.name;
+      const slug = brandName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'brand';
+
+      const demoFindings = [
+        normalizeFinding({
+          id: `guest-dyn-${Date.now()}-1`,
+          brandName,
+          candidateName: `${brandName} Support & Helpdesk`,
+          sourceType: 'social',
+          platform: 'Twitter/X',
+          candidateHandle: `@${slug}_support_desk`,
+          candidateUrl: `https://x.com/${slug}_support_desk`,
+          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=96',
+          riskScore: 89,
+          riskLevel: 'High',
+          reasons: [`Account claiming official support status for ${brandName} without verified organization badge`],
+          detectionDate: new Date().toISOString(),
+          reviewStatus: 'Needs Review',
+          isDemoData: true,
+        }),
+        normalizeFinding({
+          id: `guest-dyn-${Date.now()}-2`,
+          brandName,
+          candidateName: `${brandName} Mobile Pro (Unlocked)`,
+          sourceType: 'app',
+          platform: 'APK Repository / Unofficial Store',
+          candidateHandle: `com.unauthorized.${slug}.mod`,
+          candidateUrl: `https://apk-mirror-store.example/download/${slug}`,
+          avatarUrl: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=96',
+          developer: 'Unauthorized Mod Network',
+          packageId: `com.unauthorized.${slug}.mod`,
+          riskScore: 94,
+          riskLevel: 'High',
+          reasons: [`Package identifier mimics official ${brandName} namespace`],
+          detectionDate: new Date().toISOString(),
+          reviewStatus: 'Needs Review',
+          isDemoData: true,
+        }),
+        normalizeFinding({
+          id: `guest-dyn-${Date.now()}-3`,
+          brandName,
+          candidateName: `${brandName} Bonus & Community Rewards`,
+          sourceType: 'social',
+          platform: 'Telegram',
+          candidateHandle: `@${slug}_rewards_bot`,
+          candidateUrl: `https://t.me/${slug}_rewards_bot`,
+          avatarUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96',
+          riskScore: 80,
+          riskLevel: 'High',
+          reasons: [`Suspicious token giveaway channel soliciting credentials under ${brandName} mark`],
+          detectionDate: new Date().toISOString(),
+          reviewStatus: 'Needs Review',
+          isDemoData: true,
+        }),
+      ];
+
       return {
-        brand_name: payload.name,
+        brand_name: brandName,
         status: 'completed',
         candidates_analyzed: 8,
         findings_generated: demoFindings.length,

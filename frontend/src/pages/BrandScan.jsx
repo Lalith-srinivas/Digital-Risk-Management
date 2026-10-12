@@ -117,16 +117,17 @@ export default function BrandScan() {
         });
 
         const scanRes = await api.scanBrand(created.data.id, true);
+        const resolvedFindings = scanRes.data?.findings || [];
         scanResults = {
           brand_name: brandPayload.name,
           brand_id: created.data.id,
           status: 'completed',
-          candidates_analyzed: scanRes.data?.candidates_analyzed || 8,
-          findings_generated: scanRes.data?.findings_generated || scanRes.data?.findings?.length || 3,
-          social_analyzed: 5,
-          apps_analyzed: 3,
+          candidates_analyzed: scanRes.data?.candidates_analyzed || resolvedFindings.length || 8,
+          findings_generated: scanRes.data?.findings_generated || resolvedFindings.length,
+          social_analyzed: resolvedFindings.filter(f => (f.sourceType || f.source_type) === 'social').length || 5,
+          apps_analyzed: resolvedFindings.filter(f => (f.sourceType || f.source_type) === 'app').length || 3,
           sources_checked: ['Twitter/X', 'Telegram', 'Instagram', 'Google Play Store', 'Apple App Store'],
-          findings: scanRes.data?.findings || [],
+          findings: resolvedFindings,
           is_demo: true,
           is_guest: false,
         };

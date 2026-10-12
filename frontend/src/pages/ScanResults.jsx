@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ShieldAlert,
@@ -18,6 +18,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 import { downloadCsvReport, downloadPdfReport } from '../utils/reports';
 import RiskBadge from '../components/RiskBadge';
 
@@ -43,26 +44,49 @@ export default function ScanResults() {
     is_guest: true,
   };
 
-  const findings = scanData.findings || [];
+  const [liveFindings, setLiveFindings] = useState(null);
+
+  useEffect(() => {
+    // If brand_id is present, query backend findings to ensure exact matching results
+    const brandId = scanData.brand_id || scanData.brandId;
+    if (brandId) {
+      api.getFindings({ brandId }).then((res) => {
+        if (res.data && res.data.length > 0) {
+          setLiveFindings(res.data);
+        }
+      }).catch((e) => console.warn('Could not sync live brand findings:', e));
+    }
+  }, [scanData.brand_id, scanData.brandId]);
+
+  const findings = liveFindings || scanData.findings || [];
 
   // Metrics computation
-  const highRiskCount = findings.filter(
-    (f) => (f.riskLevel || f.risk_level || '').toLowerCase() === 'high' || (f.riskLevel || f.risk_level || '').toLowerCase() === 'critical'
-  ).length;
+  const highRiskCount = findings.filter((f) => {
+    const lvl = (f.riskLevel || f.risk_level || '').toLowerCase();
+    const score = f.riskScore !== undefined ? f.riskScore : (f.risk_score || 0);
+    return lvl === 'high' || lvl === 'critical' || score >= 60;
+  }).length;
 
-  const medRiskCount = findings.filter(
-    (f) => (f.riskLevel || f.risk_level || '').toLowerCase() === 'medium'
-  ).length;
+  const medRiskCount = findings.filter((f) => {
+    const lvl = (f.riskLevel || f.risk_level || '').toLowerCase();
+    const score = f.riskScore !== undefined ? f.riskScore : (f.risk_score || 0);
+    return lvl === 'medium' || (score >= 30 && score < 60);
+  }).length;
 
-  const lowRiskCount = findings.filter(
-    (f) => (f.riskLevel || f.risk_level || '').toLowerCase() === 'low'
-  ).length;
+  const lowRiskCount = findings.filter((f) => {
+    const lvl = (f.riskLevel || f.risk_level || '').toLowerCase();
+    const score = f.riskScore !== undefined ? f.riskScore : (f.risk_score || 0);
+    return lvl === 'low' || score < 30;
+  }).length;
+
+  const socialCount = findings.filter((f) => (f.sourceType || f.source_type) === 'social').length;
+  const appCount = findings.filter((f) => (f.sourceType || f.source_type) === 'app').length;
 
   // Filtered findings
   const filteredFindings = findings.filter((f) => {
-    // Vector tab
-    if (activeTab === 'social' && (f.sourceType || f.source_type) !== 'social') return false;
-    if (activeTab === 'app' && (f.sourceType || f.source_type) !== 'app') return false;
+    const sType = f.sourceType || f.source_type || '';
+    if (activeTab === 'social' && sType !== 'social') return false;
+    if (activeTab === 'app' && sType !== 'app') return false;
 
     // Risk severity
     if (selectedRisk !== 'ALL') {
@@ -73,9 +97,10 @@ export default function ScanResults() {
     // Search query
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
-      const name = (f.candidateName || f.candidate_name || '').toLowerCase();
-      const handle = (f.candidateHandle || f.username || f.package_identifier || '').toLowerCase();
-      const platform = (f.platform || '').toLowerCase();
+      const cand = f.candidate || {};
+      const name = (f.candidateName || cand.candidate_name || f.candidate_name || '').toLowerCase();
+      const handle = (f.candidateHandle || cand.username || cand.package_identifier || f.username || f.package_identifier || '').toLowerCase();
+      const platform = (f.platform || cand.platform || '').toLowerCase();
       return name.includes(q) || handle.includes(q) || platform.includes(q);
     }
 
@@ -84,7 +109,7 @@ export default function ScanResults() {
 
   const handleDownloadCsv = () => {
     downloadCsvReport(scanData.brand_name, findings, {
-      candidatesAnalyzed: scanData.candidates_analyzed,
+      candidatesAnalyzed: scanData.candidates_analyzed || findings.length,
     });
   };
 
@@ -284,7 +309,7 @@ export default function ScanResults() {
             {scanData.candidates_analyzed || findings.length}
           </div>
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-            {scanData.social_analyzed || 5} social • {scanData.apps_analyzed || 3} apps
+            {socialCount || scanData.social_analyzed || 5} social • {appCount || scanData.apps_analyzed || 3} apps
           </div>
         </div>
 
@@ -439,9 +464,16 @@ export default function ScanResults() {
               </thead>
               <tbody>
                 {filteredFindings.map((f, i) => {
-                  const rScore = f.riskScore !== undefined ? f.riskScore : (f.risk_score || 0);
-                  const rLevel = f.riskLevel || f.risk_level || 'Low';
+                  const cand = f.candidate || {};
+                  const cName = f.candidateName || cand.candidate_name || f.candidate_name || 'Candidate Identity';
+                  const cHandle = f.candidateHandle || cand.username || cand.package_identifier || f.username || f.package_identifier || 'N/A';
+                  const cAvatar = f.avatarUrl || cand.image_url || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96';
                   const isSocial = (f.sourceType || f.source_type) === 'social';
+                  const cPlatform = f.platform || cand.platform || (isSocial ? 'Social Media' : 'App Marketplace');
+                  const cUrl = f.candidateUrl || cand.source_url || f.source_url || '';
+                  const rScore = f.riskScore !== undefined ? f.riskScore : (f.risk_score !== undefined ? f.risk_score : 50);
+                  const rLevel = f.riskLevel || f.risk_level || (rScore >= 80 ? 'Critical' : (rScore >= 60 ? 'High' : (rScore >= 30 ? 'Medium' : 'Low')));
+                  const cEvidence = (f.reasons && f.reasons[0]) || f.explanation || (f.evidence?.reasons && f.evidence.reasons[0]) || 'Trademark similarity signal triggered.';
 
                   return (
                     <tr
@@ -456,16 +488,16 @@ export default function ScanResults() {
                       <td style={{ padding: '14px 18px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <img
-                            src={f.avatarUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96'}
+                            src={cAvatar}
                             alt=""
                             style={{ width: '36px', height: '36px', borderRadius: isSocial ? '50%' : '8px', objectFit: 'cover', border: '1px solid #e2e8f0' }}
                           />
                           <div>
                             <div style={{ fontWeight: '700', color: '#0f172a' }}>
-                              {f.candidateName || f.candidate_name || 'Candidate'}
+                              {cName}
                             </div>
                             <div style={{ fontSize: '12px', color: '#64748b' }}>
-                              {f.candidateHandle || f.username || f.package_identifier || 'N/A'}
+                              {cHandle}
                             </div>
                           </div>
                         </div>
@@ -474,7 +506,7 @@ export default function ScanResults() {
                       <td style={{ padding: '14px 18px' }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '3px 8px', borderRadius: '4px', background: '#f1f5f9', fontSize: '12px', fontWeight: '600', color: '#475569' }}>
                           {isSocial ? <Share2 size={13} color="#4f46e5" /> : <Smartphone size={13} color="#059669" />}
-                          {f.platform || (isSocial ? 'Social' : 'App Marketplace')}
+                          {cPlatform}
                         </div>
                       </td>
 
@@ -489,7 +521,7 @@ export default function ScanResults() {
 
                       <td style={{ padding: '14px 18px', maxWidth: '320px' }}>
                         <div style={{ fontSize: '12px', color: '#334155', lineHeight: '1.4' }}>
-                          {(f.reasons && f.reasons[0]) || f.explanation || 'Trademark similarity signal triggered.'}
+                          {cEvidence}
                         </div>
                         {f.evidence?.name_similarity !== undefined && (
                           <div style={{ fontSize: '11px', color: '#6366f1', marginTop: '2px', fontWeight: '600' }}>
@@ -499,9 +531,9 @@ export default function ScanResults() {
                       </td>
 
                       <td style={{ padding: '14px 18px', textAlign: 'right' }}>
-                        {(f.candidateUrl || f.source_url) ? (
+                        {cUrl ? (
                           <a
-                            href={f.candidateUrl || f.source_url}
+                            href={cUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             style={{
