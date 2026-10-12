@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
@@ -185,7 +185,7 @@ function ScanFlowLayout({ children }) {
         }
       `}</style>
       <header className="guest-floating-navbar">
-        <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
             width: '34px',
             height: '34px',
@@ -203,22 +203,22 @@ function ScanFlowLayout({ children }) {
           <span className="guest-scan-badge" style={{ fontSize: '11px', color: '#4f46e5', fontWeight: '700', background: '#e0e7ff', border: '1px solid #c7d2fe', padding: '2px 8px', borderRadius: '12px' }}>
             Guest Scan
           </span>
-        </a>
+        </Link>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <a
-            href="/login"
+          <Link
+            to="/login"
             className="guest-nav-btn"
             style={{ fontSize: '13px', fontWeight: '600', color: '#475569', textDecoration: 'none', padding: '7px 16px', borderRadius: 9999, background: 'rgba(241, 245, 249, 0.85)', border: '1px solid #e2e8f0', transition: 'all 0.15s ease' }}
           >
             Sign In
-          </a>
-          <a
-            href="/register"
+          </Link>
+          <Link
+            to="/register"
             className="guest-nav-btn"
             style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff', textDecoration: 'none', padding: '7px 18px', borderRadius: 9999, background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)', boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)', transition: 'all 0.15s ease' }}
           >
             Create Account
-          </a>
+          </Link>
         </div>
       </header>
       <main style={{ flex: 1, padding: '16px' }}>
