@@ -1,9 +1,10 @@
 import uuid
 import math
-from typing import Optional
+from typing import Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Path, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.auth import get_optional_user
 from app.schemas.common import (
     SourceTypeEnum,
     RiskLevelEnum,
@@ -28,10 +29,13 @@ def list_findings(
     page: int = Query(1, ge=1, description="Page number (1-indexed)"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
     db: Session = Depends(get_db),
+    user: Optional[Dict[str, Any]] = Depends(get_optional_user),
 ):
     """
     Retrieve paginated risk findings with multi-attribute filtering and sorting.
+    Enforces user isolation when authenticated.
     """
+    user_id = user["id"] if user else None
     findings, total = FindingService.list_findings(
         db,
         brand_id=brand_id,
@@ -43,6 +47,7 @@ def list_findings(
         sort_dir=sort_dir,
         page=page,
         page_size=page_size,
+        user_id=user_id,
     )
 
     total_pages = math.ceil(total / page_size) if total > 0 else 0
@@ -60,11 +65,13 @@ def list_findings(
 def get_finding(
     finding_id: uuid.UUID = Path(..., description="Unique finding UUID"),
     db: Session = Depends(get_db),
+    user: Optional[Dict[str, Any]] = Depends(get_optional_user),
 ):
     """
     Retrieve full details, evidence breakdown, and candidate metadata for a finding.
     """
-    finding = FindingService.get_by_id(db, finding_id)
+    user_id = user["id"] if user else None
+    finding = FindingService.get_by_id(db, finding_id, user_id=user_id)
     if not finding:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -79,10 +86,19 @@ def update_finding_status(
     status_update: FindingStatusUpdate,
     finding_id: uuid.UUID = Path(..., description="Unique finding UUID"),
     db: Session = Depends(get_db),
+    user: Optional[Dict[str, Any]] = Depends(get_optional_user),
 ):
     """
     Update human analyst review label (New, Under Review, Confirmed Suspicious, False Positive, Resolved).
     """
+    user_id = user["id"] if user else None
+    finding = FindingService.get_by_id(db, finding_id, user_id=user_id)
+    if not finding:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Finding '{finding_id}' not found.",
+        )
+
     try:
         new_status = status_update.get_status_label()
         updated = FindingService.update_review_status(

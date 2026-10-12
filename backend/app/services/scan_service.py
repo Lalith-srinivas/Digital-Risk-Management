@@ -216,6 +216,7 @@ class ScanService:
             candidates_checked=0,
             findings_created=0,
             is_demo=is_demo_run,
+            user_id=getattr(brand, "user_id", None),
         )
         db.add(scan)
         db.commit()
@@ -312,6 +313,7 @@ class ScanService:
                     existing_finding.evidence = det_result.evidence
                     existing_finding.explanation = det_result.explanation
                     existing_finding.is_demo = bool(item.is_demo or is_demo_run)
+                    existing_finding.user_id = getattr(brand, "user_id", None)
                     existing_finding.updated_at = utc_now()
                     findings.append(existing_finding)
                 else:
@@ -326,6 +328,7 @@ class ScanService:
                         explanation=det_result.explanation,
                         review_status="New",
                         is_demo=bool(item.is_demo or is_demo_run),
+                        user_id=getattr(brand, "user_id", None),
                         created_at=utc_now(),
                         updated_at=utc_now(),
                     )
@@ -378,6 +381,7 @@ class ScanService:
             candidates_checked=0,
             findings_created=0,
             is_demo=is_demo_run,
+            user_id=getattr(brand, "user_id", None),
         )
         db.add(scan)
         db.commit()
@@ -473,6 +477,7 @@ class ScanService:
                     existing_finding.evidence = det_result.evidence
                     existing_finding.explanation = det_result.explanation
                     existing_finding.is_demo = bool(item.is_demo or is_demo_run)
+                    existing_finding.user_id = getattr(brand, "user_id", None)
                     existing_finding.updated_at = utc_now()
                     findings.append(existing_finding)
                 else:
@@ -487,6 +492,7 @@ class ScanService:
                         explanation=det_result.explanation,
                         review_status="New",
                         is_demo=bool(item.is_demo or is_demo_run),
+                        user_id=getattr(brand, "user_id", None),
                         created_at=utc_now(),
                         updated_at=utc_now(),
                     )
@@ -549,4 +555,174 @@ class ScanService:
             "scans": [social_scan, app_scan],
             "findings": all_findings,
             "is_demo": is_demo,
+        }
+
+    @staticmethod
+    def execute_guest_scan(request: Any) -> Dict[str, Any]:
+        """
+        Process a brand scan in-memory for guest users with ZERO database writes.
+        Returns complete threat analysis, similarity scores, and evidence directly to the client.
+        """
+        from app.schemas.scan import GuestScanRequest
+        if isinstance(request, dict):
+            req = GuestScanRequest.from_flexible_dict(request)
+        elif isinstance(request, GuestScanRequest):
+            req = request
+        else:
+            req = GuestScanRequest.from_flexible_dict(dict(request))
+
+        class InMemoryBrand:
+            def __init__(
+                self,
+                name: str,
+                website: Optional[str] = None,
+                logo_url: Optional[str] = None,
+                official_social_urls: Optional[List[str]] = None,
+                official_apps: Optional[List[str]] = None,
+                official_developers: Optional[List[str]] = None,
+                aliases: Optional[List[str]] = None,
+            ):
+                self.id = uuid.uuid4()
+                self.name = name
+                self.website = website
+                self.logo_url = logo_url
+                self.official_social_urls = official_social_urls or []
+                self.official_apps = official_apps or []
+                self.official_developers = official_developers or []
+                self.aliases = aliases or []
+
+        brand = InMemoryBrand(
+            name=req.name,
+            website=req.website,
+            logo_url=req.logo_url,
+            official_social_urls=req.official_social_urls,
+            official_apps=req.official_apps,
+            official_developers=req.official_developers,
+            aliases=req.aliases,
+        )
+
+        detector = get_detection_engine()
+        social_items = discover_social_candidates(brand)
+        app_items = discover_app_candidates(brand)
+
+        findings: List[Dict[str, Any]] = []
+
+        # 1. Analyze social candidates in memory
+        for item in social_items:
+            det_input = DetectionInput(
+                brand_name=brand.name,
+                brand_website=brand.website,
+                official_social_urls=brand.official_social_urls,
+                official_apps=brand.official_apps,
+                official_developers=brand.official_developers,
+                aliases=brand.aliases,
+                source_type="social",
+                candidate_name=item.display_name,
+                username=item.username,
+                source_url=item.profile_url,
+                developer_name=None,
+                description=item.bio,
+                image_url=item.image_url,
+                package_identifier=None,
+                is_demo=bool(item.is_demo or req.is_demo),
+            )
+            res = detector.analyze(det_input)
+            findings.append({
+                "id": str(uuid.uuid4()),
+                "brand_id": str(brand.id),
+                "brandName": brand.name,
+                "candidate_name": item.display_name,
+                "candidateName": item.display_name,
+                "candidateHandle": item.username,
+                "username": item.username,
+                "candidateUrl": item.profile_url,
+                "source_url": item.profile_url,
+                "source_type": "social",
+                "sourceType": "social",
+                "platform": item.platform or "Twitter/X",
+                "risk_score": res.risk_score,
+                "riskScore": res.risk_score,
+                "risk_level": res.risk_level,
+                "riskLevel": res.risk_level,
+                "evidence": res.evidence,
+                "explanation": res.explanation,
+                "review_status": "New",
+                "reviewStatus": "New",
+                "is_demo": bool(item.is_demo or req.is_demo),
+                "isDemo": bool(item.is_demo or req.is_demo),
+                "is_guest": True,
+                "created_at": utc_now().isoformat(),
+                "detectionDate": utc_now().isoformat(),
+                "avatarUrl": item.image_url or "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96",
+            })
+
+        # 2. Analyze app candidates in memory
+        for item in app_items:
+            det_input = DetectionInput(
+                brand_name=brand.name,
+                brand_website=brand.website,
+                official_social_urls=brand.official_social_urls,
+                official_apps=brand.official_apps,
+                official_developers=brand.official_developers,
+                aliases=brand.aliases,
+                source_type="app",
+                candidate_name=item.app_name,
+                username=None,
+                source_url=item.store_url,
+                developer_name=item.developer_name,
+                description=item.description,
+                image_url=item.icon_url,
+                package_identifier=item.package_identifier,
+                is_demo=bool(item.is_demo or req.is_demo),
+            )
+            res = detector.analyze(det_input)
+            findings.append({
+                "id": str(uuid.uuid4()),
+                "brand_id": str(brand.id),
+                "brandName": brand.name,
+                "candidate_name": item.app_name,
+                "candidateName": item.app_name,
+                "candidateHandle": item.package_identifier or "",
+                "packageId": item.package_identifier or "",
+                "package_identifier": item.package_identifier or "",
+                "developer": item.developer_name or "",
+                "developer_name": item.developer_name or "",
+                "candidateUrl": item.store_url,
+                "source_url": item.store_url,
+                "source_type": "app",
+                "sourceType": "app",
+                "platform": item.store_type or "App Marketplace",
+                "risk_score": res.risk_score,
+                "riskScore": res.risk_score,
+                "risk_level": res.risk_level,
+                "riskLevel": res.risk_level,
+                "evidence": res.evidence,
+                "explanation": res.explanation,
+                "review_status": "New",
+                "reviewStatus": "New",
+                "is_demo": bool(item.is_demo or req.is_demo),
+                "isDemo": bool(item.is_demo or req.is_demo),
+                "is_guest": True,
+                "created_at": utc_now().isoformat(),
+                "detectionDate": utc_now().isoformat(),
+                "avatarUrl": item.icon_url or "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=96",
+            })
+
+        total_candidates = len(social_items) + len(app_items)
+
+        return {
+            "brand_name": brand.name,
+            "status": "completed",
+            "candidates_analyzed": total_candidates,
+            "findings_generated": len(findings),
+            "social_analyzed": len(social_items),
+            "apps_analyzed": len(app_items),
+            "sources_checked": ["Twitter/X", "Telegram", "Instagram", "Google Play Store", "Apple App Store", "APK Mirror"],
+            "findings": findings,
+            "is_demo": bool(req.is_demo),
+            "is_guest": True,
+            "privacy_notice": (
+                "GUEST DATA PRIVACY: This scan was processed entirely in memory. "
+                "No brand details, scans, or findings were persisted in the database."
+            ),
         }

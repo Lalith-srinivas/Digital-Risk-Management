@@ -23,6 +23,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile, openFindingsCount =
     {
       title: 'MONITORING',
       items: [
+        { label: 'New Brand Scan', path: '/scan', icon: Radar },
         { label: 'Social Monitoring', path: '/social-monitoring', icon: Share2 },
         { label: 'App Monitoring', path: '/app-monitoring', icon: Smartphone }
       ]

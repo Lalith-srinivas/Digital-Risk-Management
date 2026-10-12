@@ -12,6 +12,7 @@ import {
   X
 } from 'lucide-react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function Header({
   title = 'Dashboard',
@@ -19,6 +20,9 @@ export default function Header({
   onToggleMobile
 }) {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Analyst';
+  const userInitials = displayName.substring(0, 2).toUpperCase() || 'SA';
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState({
@@ -198,14 +202,19 @@ export default function Header({
             </div>
           )}
 
-          {/* Profile Placeholder (No real user identity) */}
-          <div className="user-profile-badge" title="Security Analyst (SOC Operator)">
-            <div className="avatar-placeholder">
-              <span>SA</span>
+          {/* Profile Badge */}
+          <div
+            className="user-profile-badge"
+            style={{ cursor: 'pointer' }}
+            onClick={() => navigate(user ? '/settings' : '/login')}
+            title={user ? `${user.email} (Settings)` : 'Guest Analyst (Click to Sign In)'}
+          >
+            <div className="avatar-placeholder" style={{ background: user ? '#4f46e5' : '#7c3aed' }}>
+              <span>{userInitials}</span>
             </div>
             <div className="user-role-text">
-              <span className="role-name">SOC Analyst</span>
-              <span className="role-title">Tier 2 Lead</span>
+              <span className="role-name">{user ? displayName : 'Guest Analyst'}</span>
+              <span className="role-title">{user ? 'Verified Account' : 'In-Memory Mode'}</span>
             </div>
           </div>
         </div>

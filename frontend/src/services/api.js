@@ -179,6 +179,25 @@ export const api = {
     }
   },
 
+  getAuthToken() {
+    try {
+      const keys = Object.keys(localStorage);
+      const supabaseKey = keys.find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+      if (supabaseKey) {
+        const item = JSON.parse(localStorage.getItem(supabaseKey));
+        if (item?.access_token) return item.access_token;
+      }
+      const demoSession = localStorage.getItem('soc360_demo_session');
+      if (demoSession) {
+        const item = JSON.parse(demoSession);
+        if (item?.access_token) return item.access_token;
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  },
+
   /**
    * Universal Fetch Wrapper with timeout and JSON handling
    */
@@ -191,6 +210,9 @@ export const api = {
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const url = `${baseUrl}${cleanEndpoint}`;
 
+    const token = this.getAuthToken();
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), options.timeout || 10000);
 
@@ -200,6 +222,7 @@ export const api = {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          ...authHeaders,
           ...(options.headers || {})
         },
         signal: controller.signal
@@ -341,6 +364,57 @@ export const api = {
           findings: findings.slice(0, 3)
         },
         isDemoData: true
+      };
+    }
+  },
+
+  /**
+   * Guest Scanning Workflow (In-Memory, Zero Persistent DB Writes):
+   * Analyzes social & app vectors in memory and returns threat dossiers directly.
+   */
+  async scanGuest(brandData) {
+    const payload = {
+      name: brandData.name || brandData.brand_name || brandData.brandName,
+      website: brandData.website || brandData.websiteUrl || null,
+      logo_url: brandData.logo_url || brandData.logoUrl || brandData.logo || null,
+      official_social_urls: brandData.official_social_urls || brandData.officialSocialUrls || [],
+      official_apps: brandData.official_apps || brandData.officialApps || [],
+      official_developers: brandData.official_developers || brandData.officialDevelopers || [],
+      aliases: brandData.aliases || [],
+      is_demo: brandData.is_demo !== undefined ? brandData.is_demo : true,
+    };
+
+    try {
+      const data = await this.request('/scan/guest', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        timeout: 30000,
+      });
+
+      const normalizedFindings = (data.findings || []).map(normalizeFinding);
+      return {
+        ...data,
+        findings: normalizedFindings,
+        isGuest: true,
+      };
+    } catch (err) {
+      console.warn('Backend guest scan failed, falling back to simulated analysis:', err);
+      const demoFindings = INITIAL_FINDINGS.map(f => normalizeFinding({
+        ...f,
+        brandName: payload.name,
+      }));
+      return {
+        brand_name: payload.name,
+        status: 'completed',
+        candidates_analyzed: 8,
+        findings_generated: demoFindings.length,
+        social_analyzed: 5,
+        apps_analyzed: 3,
+        sources_checked: ['Twitter/X', 'Telegram', 'Instagram', 'Google Play Store', 'Apple App Store'],
+        findings: demoFindings,
+        is_demo: true,
+        is_guest: true,
+        privacy_notice: 'GUEST DATA PRIVACY: This scan was processed entirely in memory.',
       };
     }
   },

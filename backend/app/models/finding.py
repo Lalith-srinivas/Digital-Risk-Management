@@ -25,6 +25,7 @@ class Finding(Base):
         String(30), default="New", nullable=False, index=True
     )  # 'New', 'Under Review', 'Confirmed Suspicious', 'False Positive', 'Resolved'
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, server_default=func.now(), index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, server_default=func.now(), onupdate=utc_now)
 

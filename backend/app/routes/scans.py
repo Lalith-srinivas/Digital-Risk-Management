@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Path, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.database import get_db
+from app.auth import get_optional_user
 from app.models.brand import Brand
 from app.models.candidate import Candidate
 from app.models.finding import Finding
@@ -13,11 +14,39 @@ from app.schemas.scan import (
     AppScanRequest,
     ScanResponse,
     ScanResultResponse,
+    GuestScanRequest,
+    GuestScanResponse,
 )
 from app.schemas.finding import FindingResponse
 from app.services.scan_service import ScanService
 
 router = APIRouter(tags=["Scans"])
+
+
+@router.post(
+    "/scan/guest",
+    response_model=GuestScanResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Execute Guest Brand Monitoring Scan (In-Memory, Zero Persistence)",
+)
+def scan_guest(request: GuestScanRequest):
+    """
+    Guest Mode Monitoring:
+    Executes brand threat detection across social and mobile application vectors in-memory.
+    Guarantees privacy: No brand information, scans, or findings are persisted to the database.
+    """
+    if not request.name.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Brand name cannot be blank.",
+        )
+    try:
+        return ScanService.execute_guest_scan(request)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Guest scan execution error: {str(e)}",
+        )
 
 
 @router.post(
@@ -131,46 +160,68 @@ def get_scan(scan_id: uuid.UUID = Path(..., description="Unique scan UUID"), db:
     return scan
 
 
-@router.get("/stats", summary="Get Global Dashboard Aggregates")
-def get_stats(db: Session = Depends(get_db)) -> Dict[str, Any]:
+@router.get("/stats", summary="Get Dashboard Aggregates with User Isolation")
+def get_stats(
+    db: Session = Depends(get_db),
+    user: Optional[Dict[str, Any]] = Depends(get_optional_user),
+) -> Dict[str, Any]:
     """
     Aggregated threat telemetry and scanning metrics directly computed from backend storage.
+    Enforces strict user isolation when authenticated with Supabase session.
     """
-    total_brands = db.query(Brand).count()
+    user_id = user["id"] if user else None
+
+    brand_query = db.query(Brand)
+    scan_query = db.query(Scan)
+    finding_query = db.query(Finding)
+
+    if user_id:
+        brand_query = brand_query.filter(Brand.user_id == user_id)
+        scan_query = scan_query.filter(Scan.user_id == user_id)
+        finding_query = finding_query.filter(Finding.user_id == user_id)
+
+    total_brands = brand_query.count()
+
+    # If authenticated user has 0 brands, return clean onboarding state immediately
+    if user_id and total_brands == 0:
+        return {
+            "totalBrands": 0,
+            "socialScanned": 0,
+            "appsScanned": 0,
+            "suspiciousFindings": 0,
+            "riskCounts": {"High": 0, "Medium": 0, "Low": 0},
+            "sourceCounts": {"social": 0, "apps": 0, "other": 0},
+            "recentFindings": [],
+            "recentScans": [],
+        }
 
     # Sum of candidate volumes
-    social_checked = (
+    social_checked_q = (
         db.query(func.coalesce(func.sum(Scan.candidates_checked), 0))
         .filter(Scan.source_type == "social")
-        .scalar()
-    ) or 0
-
-    app_checked = (
+    )
+    app_checked_q = (
         db.query(func.coalesce(func.sum(Scan.candidates_checked), 0))
         .filter(Scan.source_type == "app")
-        .scalar()
-    ) or 0
-
-    # Fallback to candidates count if scans had 0
-    if social_checked == 0:
-        social_checked = db.query(Candidate).filter(Candidate.source_type == "social").count()
-    if app_checked == 0:
-        app_checked = db.query(Candidate).filter(Candidate.source_type == "app").count()
-
-    suspicious_findings = (
-        db.query(Finding).filter(Finding.risk_score >= 60).count()
     )
+    if user_id:
+        social_checked_q = social_checked_q.filter(Scan.user_id == user_id)
+        app_checked_q = app_checked_q.filter(Scan.user_id == user_id)
 
-    high_risk = db.query(Finding).filter(Finding.risk_level.in_(["high", "critical", "High", "Critical"])).count()
-    med_risk = db.query(Finding).filter(Finding.risk_level.in_(["medium", "Medium"])).count()
-    low_risk = db.query(Finding).filter(Finding.risk_level.in_(["low", "Low"])).count()
+    social_checked = social_checked_q.scalar() or 0
+    app_checked = app_checked_q.scalar() or 0
 
-    social_findings = db.query(Finding).filter(Finding.source_type == "social").count()
-    app_findings = db.query(Finding).filter(Finding.source_type == "app").count()
+    suspicious_findings = finding_query.filter(Finding.risk_score >= 60).count()
+    high_risk = finding_query.filter(Finding.risk_level.in_(["high", "critical", "High", "Critical"])).count()
+    med_risk = finding_query.filter(Finding.risk_level.in_(["medium", "Medium"])).count()
+    low_risk = finding_query.filter(Finding.risk_level.in_(["low", "Low"])).count()
+
+    social_findings = finding_query.filter(Finding.source_type == "social").count()
+    app_findings = finding_query.filter(Finding.source_type == "app").count()
 
     # Recent findings with hydrated candidate and brand info
     recent_findings_db = (
-        db.query(Finding)
+        finding_query
         .order_by(Finding.created_at.desc())
         .limit(5)
         .all()
@@ -199,7 +250,7 @@ def get_stats(db: Session = Depends(get_db)) -> Dict[str, Any]:
 
     # Recent scans
     recent_scans_db = (
-        db.query(Scan)
+        scan_query
         .order_by(Scan.started_at.desc())
         .limit(4)
         .all()

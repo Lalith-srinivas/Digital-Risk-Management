@@ -20,6 +20,7 @@ class Brand(Base):
     official_apps: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     official_developers: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     aliases: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, server_default=func.now(), onupdate=utc_now)
 
