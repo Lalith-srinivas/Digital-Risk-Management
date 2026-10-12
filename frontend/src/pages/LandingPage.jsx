@@ -91,170 +91,102 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section with Attractive Cyber Risk Shield Background */}
+      {/* Hero Section */}
       <section style={{
-        position: 'relative',
-        width: '100%',
-        overflow: 'hidden',
-        borderBottom: '1px solid #eef2f6',
+        maxWidth: '1100px',
+        margin: '0 auto',
+        padding: '72px 24px 48px',
+        textAlign: 'center',
       }}>
-        {/* Generated Nano Banana Hero Background Image Layer */}
         <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundImage: "url('/hero-bg.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center 40%',
-          opacity: 0.35,
-          filter: 'saturate(1.4) contrast(1.15)',
-          pointerEvents: 'none',
-        }} />
-
-        {/* Ambient Purple & Indigo Cyber Glow Gradients */}
-        <div style={{
-          position: 'absolute',
-          top: '-20%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '900px',
-          height: '450px',
-          background: 'radial-gradient(ellipse at center, rgba(124, 58, 237, 0.22) 0%, rgba(79, 70, 229, 0.1) 45%, transparent 75%)',
-          pointerEvents: 'none',
-        }} />
-
-        {/* Bottom Smooth Fade to White */}
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '90px',
-          background: 'linear-gradient(to bottom, transparent 0%, #ffffff 100%)',
-          pointerEvents: 'none',
-        }} />
-
-        {/* Top Header Soft Blend */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '40px',
-          background: 'linear-gradient(to top, transparent 0%, rgba(255, 255, 255, 0.8) 100%)',
-          pointerEvents: 'none',
-        }} />
-
-        {/* Hero Content Container */}
-        <div style={{
-          position: 'relative',
-          zIndex: 1,
-          maxWidth: '1100px',
-          margin: '0 auto',
-          padding: '84px 24px 60px',
-          textAlign: 'center',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: '#f5f3ff',
+          border: '1px solid #ddd6fe',
+          padding: '6px 14px',
+          borderRadius: '20px',
+          fontSize: '13px',
+          fontWeight: '600',
+          color: '#6366f1',
+          marginBottom: '24px',
         }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'rgba(245, 243, 255, 0.88)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid #ddd6fe',
-            padding: '6px 16px',
-            borderRadius: '20px',
-            fontSize: '13px',
-            fontWeight: '600',
-            color: '#6366f1',
-            marginBottom: '24px',
-            boxShadow: '0 2px 10px rgba(124, 58, 237, 0.08)',
+          <Sparkles size={16} /> Autonomous Brand Surveillance & Threat Detection
+        </div>
+
+        <h1 style={{
+          fontSize: '52px',
+          fontWeight: '800',
+          lineHeight: '1.15',
+          letterSpacing: '-1px',
+          color: '#0f172a',
+          marginBottom: '20px',
+        }}>
+          Protect Your Brand Across the <br />
+          <span style={{
+            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
           }}>
-            <Sparkles size={16} /> Autonomous Brand Surveillance & Threat Detection
-          </div>
+            Digital World
+          </span>
+        </h1>
 
-          <h1 style={{
-            fontSize: '54px',
-            fontWeight: '800',
-            lineHeight: '1.14',
-            letterSpacing: '-1.2px',
-            color: '#0f172a',
-            marginBottom: '20px',
-            textShadow: '0 1px 30px rgba(255, 255, 255, 0.8)',
-          }}>
-            Protect Your Brand Across the <br />
-            <span style={{
-              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              filter: 'drop-shadow(0 4px 16px rgba(124, 58, 237, 0.25))',
-            }}>
-              Digital World
-            </span>
-          </h1>
+        <p style={{
+          fontSize: '19px',
+          color: '#475569',
+          maxWidth: '720px',
+          margin: '0 auto 36px',
+          lineHeight: '1.6',
+        }}>
+          Identify potential brand impersonation across social media and application marketplaces using explainable risk analysis.
+        </p>
 
-          <p style={{
-            fontSize: '19px',
-            color: '#334155',
-            maxWidth: '720px',
-            margin: '0 auto 36px',
-            lineHeight: '1.6',
-            fontWeight: '500',
-            textShadow: '0 1px 12px rgba(255, 255, 255, 0.9)',
-          }}>
-            Identify potential brand impersonation across social media and application marketplaces using explainable risk analysis.
-          </p>
+        {/* Action CTAs */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => navigate('/scan')}
+            style={{
+              padding: '14px 32px',
+              fontSize: '16px',
+              fontWeight: '700',
+              color: '#ffffff',
+              background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'transform 0.15s ease',
+            }}
+          >
+            Start Monitoring <ArrowRight size={18} />
+          </button>
 
-          {/* Action CTAs */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => navigate('/scan')}
-              style={{
-                padding: '14px 34px',
-                fontSize: '16px',
-                fontWeight: '700',
-                color: '#ffffff',
-                background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-                border: 'none',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                boxShadow: '0 8px 24px rgba(79, 70, 229, 0.35)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              Start Monitoring <ArrowRight size={18} />
-            </button>
+          <button
+            onClick={() => navigate('/login')}
+            style={{
+              padding: '14px 28px',
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#334155',
+              background: '#ffffff',
+              border: '1px solid #cbd5e1',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <Lock size={16} /> Sign In
+          </button>
+        </div>
 
-            <button
-              onClick={() => navigate('/login')}
-              style={{
-                padding: '14px 30px',
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#334155',
-                background: 'rgba(255, 255, 255, 0.92)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid #cbd5e1',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <Lock size={16} /> Sign In
-            </button>
-          </div>
-
-          <div style={{ marginTop: '20px', fontSize: '13px', color: '#64748b', fontWeight: '500' }}>
-            <span style={{ fontWeight: '700', color: '#4f46e5' }}>No account required</span> for guest brand scans • In-memory privacy guaranteed
-          </div>
+        <div style={{ marginTop: '18px', fontSize: '13px', color: '#64748b' }}>
+          <span style={{ fontWeight: '600', color: '#4f46e5' }}>No account required</span> for guest brand scans • In-memory privacy guaranteed
         </div>
       </section>
 
