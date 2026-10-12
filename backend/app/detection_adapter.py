@@ -192,6 +192,70 @@ class InternalDetectionAdapter(BaseDetectionEngine):
         )
 
 
+class SOC360DetectionEngine(BaseDetectionEngine):
+    """
+    Production detection engine integrating RapidFuzz, ImageHash,
+    and multi-signal heuristic risk scoring for SOC 360.
+    """
+
+    def analyze(self, data: DetectionInput) -> DetectionResult:
+        from app.detection import analyze_app_candidate, analyze_social_candidate
+
+        brand = {
+            "name": data.brand_name,
+            "aliases": data.aliases,
+            "official_urls": data.official_social_urls,
+            "official_domains": [data.brand_website] if data.brand_website else [],
+            "official_developers": data.official_developers,
+            "official_apps": data.official_apps,
+        }
+
+        if data.source_type == "app":
+            candidate = {
+                "app_name": data.candidate_name,
+                "developer": data.developer_name,
+                "url": data.source_url,
+                "icon_path": data.image_url,
+                "description": data.description,
+                "package_id": data.package_identifier,
+            }
+            res = analyze_app_candidate(brand, candidate)
+        else:
+            candidate = {
+                "display_name": data.candidate_name,
+                "username": data.username,
+                "url": data.source_url,
+                "avatar_path": data.image_url,
+                "bio": data.description,
+            }
+            res = analyze_social_candidate(brand, candidate)
+
+        score = int(round(res["risk_score"]))
+        risk_level = res["risk_level"].lower()
+        if score >= 80:
+            risk_level = "critical"
+
+        rec = "Ignore" if score < 30 else ("Review" if score < 70 else "Escalate")
+
+        evidence_dict = {
+            "evidence_list": res["evidence"],
+            "missing_evidence": res["missing_evidence"],
+            "signals": res["signals"],
+            "is_official_match": res["is_official_match"],
+            "exclusion_reason": res["exclusion_reason"],
+        }
+
+        return DetectionResult(
+            risk_score=score,
+            risk_level=risk_level,
+            evidence=evidence_dict,
+            explanation=res["explanation"],
+            review_recommendation=rec,
+            is_temporary_adapter=False,
+            engine_name="soc360_similarity_detection_v2",
+        )
+
+
 # Global detection engine instance
 _engine: BaseDetectionEngine = InternalDetectionAdapter()
 

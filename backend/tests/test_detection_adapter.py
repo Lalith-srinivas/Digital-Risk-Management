@@ -63,3 +63,44 @@ def test_app_unauthorized_developer():
     result = adapter.analyze(data)
     assert result.risk_score >= 60
     assert result.evidence.get("unauthorized_developer") is True
+
+
+def test_soc360_production_engine_social():
+    from app.detection_adapter import SOC360DetectionEngine
+
+    engine = SOC360DetectionEngine()
+    data = DetectionInput(
+        brand_name="GlobalBank",
+        official_social_urls=["https://twitter.com/globalbank"],
+        source_type="social",
+        candidate_name="GlobalBank Helpdesk Support",
+        username="globalbank_support_verify",
+        source_url="https://twitter.com/fake_globalbank",
+        description="Official 24/7 GlobalBank customer verification and rewards.",
+    )
+    result = engine.analyze(data)
+    assert result.risk_score >= 40
+    assert result.is_temporary_adapter is False
+    assert result.engine_name == "soc360_similarity_detection_v2"
+    assert "evidence_list" in result.evidence
+
+
+def test_soc360_production_engine_app():
+    from app.detection_adapter import SOC360DetectionEngine
+
+    engine = SOC360DetectionEngine()
+    data = DetectionInput(
+        brand_name="SuperPay",
+        official_apps=["com.superpay.wallet"],
+        official_developers=["SuperPay Technologies Inc."],
+        source_type="app",
+        candidate_name="SuperPay Fast Wallet",
+        developer_name="Rogue Dev Team",
+        package_identifier="com.superpay.fake",
+        description="Quick SuperPay wallet access",
+    )
+    result = engine.analyze(data)
+    assert result.risk_score >= 40
+    assert result.is_temporary_adapter is False
+    assert result.engine_name == "soc360_similarity_detection_v2"
+
