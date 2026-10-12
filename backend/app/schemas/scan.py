@@ -8,13 +8,13 @@ from app.schemas.finding import FindingResponse
 
 class SocialScanRequest(BaseModel):
     brand_id: uuid.UUID = Field(..., description="ID of the registered brand to monitor")
-    candidates: List[SocialCandidateInput] = Field(..., description="List of social profiles to check")
+    candidates: Optional[List[SocialCandidateInput]] = Field(default=None, description="List of social profiles to check (auto-discovered if empty)")
     is_demo: Optional[bool] = Field(False, description="Whether this scan represents a demo run")
 
 
 class AppScanRequest(BaseModel):
     brand_id: uuid.UUID = Field(..., description="ID of the registered brand to monitor")
-    candidates: List[AppCandidateInput] = Field(..., description="List of applications to check")
+    candidates: Optional[List[AppCandidateInput]] = Field(default=None, description="List of applications to check (auto-discovered if empty)")
     is_demo: Optional[bool] = Field(False, description="Whether this scan represents a demo run")
 
 
@@ -36,3 +36,14 @@ class ScanResponse(BaseModel):
 class ScanResultResponse(BaseModel):
     scan: ScanResponse
     findings: List[FindingResponse]
+
+
+class BrandScanResponse(BaseModel):
+    brand_id: uuid.UUID
+    brand_name: str
+    status: str
+    candidates_analyzed: int
+    findings_generated: int
+    scans: List[ScanResponse]
+    findings: List[FindingResponse]
+    is_demo: bool

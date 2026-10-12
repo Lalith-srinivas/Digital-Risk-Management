@@ -80,3 +80,41 @@ def delete_brand(brand_id: uuid.UUID = Path(..., description="The unique brand U
             detail=f"Brand '{brand_id}' not found.",
         )
     return {"detail": "Brand deleted successfully", "id": str(brand_id)}
+
+
+@router.post(
+    "/{brand_id}/scan",
+    status_code=status.HTTP_201_CREATED,
+    summary="Execute Complete Brand Monitoring Scan",
+)
+def scan_brand_workflow(
+    brand_id: uuid.UUID = Path(..., description="The unique brand UUID"),
+    is_demo: bool = True,
+    db: Session = Depends(get_db),
+):
+    """
+    Primary Brand-First monitoring workflow:
+    Loads the registered brand profile, coordinates candidate discovery across social
+    channels and mobile app stores, executes similarity scoring & evidence extraction,
+    deduplicates against existing findings, and persists results.
+    """
+    from app.services.scan_service import ScanService
+    from app.schemas.scan import BrandScanResponse, ScanResponse
+    from app.schemas.finding import FindingResponse
+
+    try:
+        result = ScanService.execute_brand_scan(db, brand_id=brand_id, is_demo=is_demo)
+        return BrandScanResponse(
+            brand_id=result["brand_id"],
+            brand_name=result["brand_name"],
+            status=result["status"],
+            candidates_analyzed=result["candidates_analyzed"],
+            findings_generated=result["findings_generated"],
+            scans=[ScanResponse.model_validate(s) for s in result["scans"]],
+            findings=[FindingResponse.model_validate(f) for f in result["findings"]],
+            is_demo=result["is_demo"],
+        )
+    except ValueError as ve:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(ve))
+    except RuntimeError as re:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(re))

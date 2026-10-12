@@ -74,6 +74,7 @@ def get_finding(
 
 
 @router.patch("/{finding_id}/status", response_model=FindingResponse, summary="Update Finding Review Status")
+@router.patch("/{finding_id}", response_model=FindingResponse, include_in_schema=False)
 def update_finding_status(
     status_update: FindingStatusUpdate,
     finding_id: uuid.UUID = Path(..., description="Unique finding UUID"),
@@ -83,8 +84,9 @@ def update_finding_status(
     Update human analyst review label (New, Under Review, Confirmed Suspicious, False Positive, Resolved).
     """
     try:
+        new_status = status_update.get_status_label()
         updated = FindingService.update_review_status(
-            db, finding_id, status_update.review_status.value
+            db, finding_id, new_status
         )
         if not updated:
             raise HTTPException(

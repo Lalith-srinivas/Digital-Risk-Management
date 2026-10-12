@@ -10,7 +10,7 @@ export default function DemoBanner({ isDemo }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <Info size={16} />
         <span>
-          <strong>DEMO DATA MODE:</strong> Backend is offline or unconfigured. Demonstration dataset active. Fabricated findings are not live surveillance detections.
+          <strong>DEMO DATA MODE</strong> — Findings are simulated examples and are not live surveillance detections.
         </span>
       </div>
       <Link

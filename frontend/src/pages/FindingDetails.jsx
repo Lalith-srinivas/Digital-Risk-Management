@@ -189,7 +189,7 @@ export default function FindingDetails() {
               border: '1px solid var(--border-light)'
             }}>
               <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                Composite Threat Score
+                Calculated Risk Score
               </span>
               <div style={{
                 fontSize: '2rem',
@@ -200,7 +200,7 @@ export default function FindingDetails() {
                 {finding.riskScore}/100
               </div>
               <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                {finding.riskLevel} Impersonation Probability
+                {finding.riskLevel} Review Priority
               </span>
             </div>
           </div>
