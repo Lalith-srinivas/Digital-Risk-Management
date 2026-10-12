@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="url(#grad)" />
+  <!-- Shield outline -->
+  <path d="M16 5 L24 8 V15 C24 20.5 20.5 24.5 16 26 C11.5 24.5 8 20.5 8 15 V8 Z" fill="none" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" />
+  <!-- Radar circles & beam -->
+  <circle cx="16" cy="15" r="3.5" fill="none" stroke="#ffffff" stroke-width="1.5" />
+  <circle cx="16" cy="15" r="1.5" fill="#ffffff" />
+  <line x1="16" y1="15" x2="20" y2="12" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" />
+</svg>
