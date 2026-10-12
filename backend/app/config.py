@@ -12,6 +12,7 @@ class Settings(BaseSettings):
 
     # Supabase optional credentials
     SUPABASE_URL: str = ""
+    SUPABASE_ANON_KEY: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
 
     # CORS Configuration
