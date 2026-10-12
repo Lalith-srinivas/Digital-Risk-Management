@@ -15,7 +15,7 @@ const CONFIG_KEYS = {
 };
 
 // Default backend URL
-const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? 'https://soc360-backend.onrender.com' : 'http://localhost:8000');
 
 let isBackendLive = false;
 let lastHealthCheck = null;
