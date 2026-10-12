@@ -12,6 +12,7 @@ import {
   Sparkles,
   Zap,
 } from 'lucide-react';
+import XylophoneHelix from '../components/XylophoneHelix';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -20,12 +21,13 @@ export default function LandingPage() {
     <div style={{ minHeight: '100vh', background: '#ffffff', color: '#0f172a', display: 'flex', flexDirection: 'column' }}>
       {/* Top Navbar */}
       <header style={{
-        borderBottom: '1px solid #e2e8f0',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         padding: '16px 32px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: '#ffffff',
+        background: 'rgba(3, 5, 12, 0.85)',
+        backdropFilter: 'blur(16px)',
         position: 'sticky',
         top: 0,
         zIndex: 50,
@@ -40,13 +42,13 @@ export default function LandingPage() {
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
-            boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)',
+            boxShadow: '0 4px 12px rgba(79, 70, 229, 0.35)',
           }}>
             <ShieldAlert size={22} />
           </div>
           <div>
-            <span style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.5px', color: '#1e1b4b' }}>SOC 360</span>
-            <span style={{ fontSize: '11px', color: '#6366f1', fontWeight: '600', marginLeft: '6px', background: '#e0e7ff', padding: '2px 8px', borderRadius: '12px' }}>
+            <span style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.5px', color: '#ffffff' }}>SOC 360</span>
+            <span style={{ fontSize: '11px', color: '#c7d2fe', fontWeight: '600', marginLeft: '8px', background: 'rgba(99, 102, 241, 0.25)', border: '1px solid rgba(129, 140, 248, 0.3)', padding: '2px 8px', borderRadius: '12px' }}>
               Digital Risk Protection
             </span>
           </div>
@@ -59,9 +61,9 @@ export default function LandingPage() {
               padding: '8px 18px',
               fontSize: '14px',
               fontWeight: '600',
-              color: '#4f46e5',
-              background: '#f5f3ff',
-              border: '1px solid #ddd6fe',
+              color: '#f8fafc',
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
               borderRadius: '8px',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
@@ -80,7 +82,7 @@ export default function LandingPage() {
               border: 'none',
               borderRadius: '8px',
               cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(79, 70, 229, 0.2)',
+              boxShadow: '0 4px 16px rgba(79, 70, 229, 0.4)',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
@@ -91,102 +93,173 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section with Interactive Xylophone Helix Background */}
       <section style={{
-        maxWidth: '1100px',
-        margin: '0 auto',
-        padding: '72px 24px 48px',
-        textAlign: 'center',
+        position: 'relative',
+        overflow: 'hidden',
+        background: '#03050c',
+        minHeight: '620px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}>
+        {/* Interactive 3D Xylophone Helix Canvas Background */}
         <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '8px',
-          background: '#f5f3ff',
-          border: '1px solid #ddd6fe',
-          padding: '6px 14px',
-          borderRadius: '20px',
-          fontSize: '13px',
-          fontWeight: '600',
-          color: '#6366f1',
-          marginBottom: '24px',
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 0,
+          pointerEvents: 'auto',
         }}>
-          <Sparkles size={16} /> Autonomous Brand Surveillance & Threat Detection
+          <XylophoneHelix
+            background="#03050c"
+            baseColor="#FFF3F3"
+            bars={44}
+            shape="helix"
+            torusRadius={1.38}
+            tubeRadius={0.64}
+            speed={100}
+            drag={100}
+            scale={380}
+            hover={{
+              glow: 48,
+              tint: 47,
+              colors: ["#FFF9F9", "#0012FF", "#060146"],
+              strength: 184,
+            }}
+            camera={{ tilt: 54, sideTilt: 78 }}
+            width="100%"
+            height="100%"
+          />
         </div>
 
-        <h1 style={{
-          fontSize: '52px',
-          fontWeight: '800',
-          lineHeight: '1.15',
-          letterSpacing: '-1px',
-          color: '#0f172a',
-          marginBottom: '20px',
+        {/* Ambient Radial Vignette for Content Contrast */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(circle at 50% 45%, rgba(3, 5, 12, 0.42) 0%, rgba(3, 5, 12, 0.88) 88%)',
+          pointerEvents: 'none',
+          zIndex: 1,
+        }} />
+
+        {/* Smooth Bottom Fade Transition into White Features Section */}
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '60px',
+          background: 'linear-gradient(to bottom, transparent, #ffffff)',
+          pointerEvents: 'none',
+          zIndex: 2,
+        }} />
+
+        {/* Hero Content Container */}
+        <div style={{
+          position: 'relative',
+          zIndex: 3,
+          maxWidth: '1100px',
+          margin: '0 auto',
+          padding: '80px 24px 64px',
+          textAlign: 'center',
+          pointerEvents: 'none',
         }}>
-          Protect Your Brand Across the <br />
-          <span style={{
-            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'rgba(99, 102, 241, 0.18)',
+            border: '1px solid rgba(129, 140, 248, 0.35)',
+            padding: '6px 16px',
+            borderRadius: '20px',
+            fontSize: '13px',
+            fontWeight: '600',
+            color: '#c7d2fe',
+            marginBottom: '24px',
+            backdropFilter: 'blur(8px)',
           }}>
-            Digital World
-          </span>
-        </h1>
+            <Sparkles size={16} /> Autonomous Brand Surveillance & Threat Detection
+          </div>
 
-        <p style={{
-          fontSize: '19px',
-          color: '#475569',
-          maxWidth: '720px',
-          margin: '0 auto 36px',
-          lineHeight: '1.6',
-        }}>
-          Identify potential brand impersonation across social media and application marketplaces using explainable risk analysis.
-        </p>
+          <h1 style={{
+            fontSize: '54px',
+            fontWeight: '800',
+            lineHeight: '1.15',
+            letterSpacing: '-1px',
+            color: '#ffffff',
+            marginBottom: '20px',
+            textShadow: '0 2px 20px rgba(0, 0, 0, 0.7)',
+          }}>
+            Protect Your Brand Across the <br />
+            <span style={{
+              background: 'linear-gradient(135deg, #818cf8 0%, #c084fc 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}>
+              Digital World
+            </span>
+          </h1>
 
-        {/* Action CTAs */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => navigate('/scan')}
-            style={{
-              padding: '14px 32px',
-              fontSize: '16px',
-              fontWeight: '700',
-              color: '#ffffff',
-              background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
-              border: 'none',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              boxShadow: '0 8px 20px rgba(79, 70, 229, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'transform 0.15s ease',
-            }}
-          >
-            Start Monitoring <ArrowRight size={18} />
-          </button>
+          <p style={{
+            fontSize: '19px',
+            color: '#cbd5e1',
+            maxWidth: '720px',
+            margin: '0 auto 36px',
+            lineHeight: '1.6',
+            textShadow: '0 1px 10px rgba(0, 0, 0, 0.6)',
+          }}>
+            Identify potential brand impersonation across social media and application marketplaces using explainable risk analysis.
+          </p>
 
-          <button
-            onClick={() => navigate('/login')}
-            style={{
-              padding: '14px 28px',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#334155',
-              background: '#ffffff',
-              border: '1px solid #cbd5e1',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            <Lock size={16} /> Sign In
-          </button>
-        </div>
+          {/* Action CTAs */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', pointerEvents: 'auto' }}>
+            <button
+              onClick={() => navigate('/scan')}
+              style={{
+                padding: '14px 32px',
+                fontSize: '16px',
+                fontWeight: '700',
+                color: '#ffffff',
+                background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
+                border: 'none',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                boxShadow: '0 8px 24px rgba(79, 70, 229, 0.45)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+              }}
+            >
+              Start Monitoring <ArrowRight size={18} />
+            </button>
 
-        <div style={{ marginTop: '18px', fontSize: '13px', color: '#64748b' }}>
-          <span style={{ fontWeight: '600', color: '#4f46e5' }}>No account required</span> for guest brand scans • In-memory privacy guaranteed
+            <button
+              onClick={() => navigate('/login')}
+              style={{
+                padding: '14px 28px',
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#f8fafc',
+                background: 'rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backdropFilter: 'blur(8px)',
+                transition: 'background 0.15s ease',
+              }}
+            >
+              <Lock size={16} /> Sign In
+            </button>
+          </div>
+
+          <div style={{ marginTop: '20px', fontSize: '13px', color: '#94a3b8' }}>
+            <span style={{ fontWeight: '600', color: '#a5b4fc' }}>No account required</span> for guest brand scans • In-memory privacy guaranteed
+          </div>
         </div>
       </section>
 
