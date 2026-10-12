@@ -185,10 +185,13 @@ export default function LandingPage() {
         position: 'relative',
         overflow: 'hidden',
         background: '#03050c',
-        minHeight: '620px',
+        minHeight: '100vh',
+        width: '100%',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
+        boxSizing: 'border-box',
       }}>
         {/* Interactive 3D Xylophone Helix Canvas Background */}
         <div style={{
@@ -208,7 +211,7 @@ export default function LandingPage() {
             tubeRadius={0.64}
             speed={100}
             drag={100}
-            scale={380}
+            scale={420}
             hover={{
               glow: 48,
               tint: 47,
@@ -225,7 +228,7 @@ export default function LandingPage() {
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'radial-gradient(circle at 50% 45%, rgba(3, 5, 12, 0.42) 0%, rgba(3, 5, 12, 0.88) 88%)',
+          background: 'radial-gradient(circle at 50% 50%, rgba(3, 5, 12, 0.38) 0%, rgba(3, 5, 12, 0.88) 88%)',
           pointerEvents: 'none',
           zIndex: 1,
         }} />
@@ -236,7 +239,7 @@ export default function LandingPage() {
           bottom: 0,
           left: 0,
           right: 0,
-          height: '60px',
+          height: '80px',
           background: 'linear-gradient(to bottom, transparent, #ffffff)',
           pointerEvents: 'none',
           zIndex: 2,
@@ -249,10 +252,15 @@ export default function LandingPage() {
             position: 'relative',
             zIndex: 3,
             maxWidth: '1100px',
-            margin: '0 auto',
-            padding: '115px 24px 64px',
+            width: '100%',
+            margin: 'auto 0',
+            padding: '120px 24px 64px',
             textAlign: 'center',
             pointerEvents: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <div style={{
@@ -355,6 +363,44 @@ export default function LandingPage() {
 
           <div style={{ marginTop: '20px', fontSize: '13px', color: '#94a3b8' }}>
             <span style={{ fontWeight: '600', color: '#a5b4fc' }}>No account required</span> for guest brand scans • In-memory privacy guaranteed
+          </div>
+        </div>
+
+        {/* Subtle Scroll Down Indicator */}
+        <div style={{
+          position: 'absolute',
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '5px',
+          color: '#94a3b8',
+          fontSize: '10px',
+          fontWeight: '700',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          pointerEvents: 'none',
+          zIndex: 3,
+          opacity: 0.7,
+        }}>
+          <span>Scroll</span>
+          <div style={{
+            width: '16px',
+            height: '24px',
+            border: '2px solid rgba(255, 255, 255, 0.25)',
+            borderRadius: '12px',
+            display: 'flex',
+            justifyContent: 'center',
+            paddingTop: '3px',
+          }}>
+            <div style={{
+              width: '2px',
+              height: '5px',
+              background: '#818cf8',
+              borderRadius: '2px',
+            }} />
           </div>
         </div>
       </section>
