@@ -105,7 +105,7 @@ export default function LandingPage() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundImage: "url('/hero-bg.jpg')",
+          backgroundImage: "url('/hero-bg.png')",
           backgroundSize: 'cover',
           backgroundPosition: 'center 40%',
           opacity: 0.35,
