@@ -233,17 +233,6 @@ export default function LandingPage() {
           zIndex: 1,
         }} />
 
-        {/* Smooth Bottom Fade Transition into White Features Section */}
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '80px',
-          background: 'linear-gradient(to bottom, transparent, #ffffff)',
-          pointerEvents: 'none',
-          zIndex: 2,
-        }} />
 
         {/* Hero Content Container */}
         <div

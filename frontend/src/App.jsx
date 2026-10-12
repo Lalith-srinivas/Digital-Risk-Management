@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { ShieldAlert } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -145,28 +146,77 @@ function ScanFlowLayout({ children }) {
   if (user) {
     return <AppLayout>{children}</AppLayout>;
   }
-  // Guest view: clean standalone layout
+  // Guest view: clean standalone layout with floating navbar
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
-      <header style={{
-        background: '#ffffff',
-        borderBottom: '1px solid #e2e8f0',
-        padding: '14px 28px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
+      <style>{`
+        .guest-floating-navbar {
+          position: sticky;
+          top: 14px;
+          margin: 14px auto 10px;
+          width: min(1140px, calc(100% - 32px));
+          z-index: 100;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 22px;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.88);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(226, 232, 240, 0.9);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), 0 1px 1px rgba(255, 255, 255, 0.8) inset;
+          transition: all 0.25s ease;
+        }
+        @media (max-width: 640px) {
+          .guest-floating-navbar {
+            top: 10px;
+            margin: 10px auto 6px;
+            width: calc(100% - 20px);
+            padding: 8px 14px;
+          }
+          .guest-scan-badge {
+            display: none !important;
+          }
+          .guest-nav-btn {
+            padding: 6px 12px !important;
+            font-size: 12px !important;
+          }
+        }
+      `}</style>
+      <header className="guest-floating-navbar">
         <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '18px', fontWeight: '800', color: '#1e1b4b' }}>SOC 360</span>
-          <span style={{ fontSize: '11px', color: '#4f46e5', fontWeight: '700', background: '#e0e7ff', padding: '2px 8px', borderRadius: '12px' }}>
+          <div style={{
+            width: '34px',
+            height: '34px',
+            borderRadius: '10px',
+            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+          }}>
+            <ShieldAlert size={18} />
+          </div>
+          <span style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.3px' }}>SOC 360</span>
+          <span className="guest-scan-badge" style={{ fontSize: '11px', color: '#4f46e5', fontWeight: '700', background: '#e0e7ff', border: '1px solid #c7d2fe', padding: '2px 8px', borderRadius: '12px' }}>
             Guest Scan
           </span>
         </a>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <a href="/login" style={{ fontSize: '13px', fontWeight: '600', color: '#4f46e5', textDecoration: 'none', padding: '6px 14px', borderRadius: '6px', background: '#f5f3ff' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <a
+            href="/login"
+            className="guest-nav-btn"
+            style={{ fontSize: '13px', fontWeight: '600', color: '#475569', textDecoration: 'none', padding: '7px 16px', borderRadius: 9999, background: 'rgba(241, 245, 249, 0.85)', border: '1px solid #e2e8f0', transition: 'all 0.15s ease' }}
+          >
             Sign In
           </a>
-          <a href="/register" style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff', textDecoration: 'none', padding: '6px 14px', borderRadius: '6px', background: '#4f46e5' }}>
+          <a
+            href="/register"
+            className="guest-nav-btn"
+            style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff', textDecoration: 'none', padding: '7px 18px', borderRadius: 9999, background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)', boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)', transition: 'all 0.15s ease' }}
+          >
             Create Account
           </a>
         </div>

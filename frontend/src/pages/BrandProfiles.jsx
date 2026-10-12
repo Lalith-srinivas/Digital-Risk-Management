@@ -65,8 +65,11 @@ export default function BrandProfiles() {
 
   // Filtered brands
   const filteredBrands = brands.filter(b => {
+    if (!b) return false;
     const q = search.toLowerCase();
-    return b.name.toLowerCase().includes(q) || (b.category && b.category.toLowerCase().includes(q));
+    const nameMatch = b.name ? b.name.toLowerCase().includes(q) : false;
+    const catMatch = b.category ? b.category.toLowerCase().includes(q) : false;
+    return nameMatch || catMatch;
   });
 
   // Dynamic Array Handlers
@@ -255,7 +258,7 @@ export default function BrandProfiles() {
     {
       header: 'Website',
       key: 'website',
-      render: (row) => (
+      render: (row) => row.website ? (
         <a
           href={row.website}
           target="_blank"
@@ -263,9 +266,11 @@ export default function BrandProfiles() {
           style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 600 }}
           onClick={(e) => e.stopPropagation()}
         >
-          <span>{row.website.replace(/^https?:\/\//, '')}</span>
+          <span>{(row.website || '').replace(/^https?:\/\//, '')}</span>
           <ExternalLink size={12} />
         </a>
+      ) : (
+        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>—</span>
       )
     },
     {
@@ -707,14 +712,16 @@ export default function BrandProfiles() {
             <div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>{selectedBrand.name}</h2>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{selectedBrand.category} • Monitored since {formatDate(selectedBrand.lastScan)}</p>
-              <a
-                href={selectedBrand.website}
-                target="_blank"
-                rel="noreferrer"
-                style={{ fontSize: '0.78rem', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}
-              >
-                {selectedBrand.website} <ExternalLink size={12} />
-              </a>
+              {selectedBrand.website && (
+                <a
+                  href={selectedBrand.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: '0.78rem', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}
+                >
+                  {(selectedBrand.website || '').replace(/^https?:\/\//, '')} <ExternalLink size={12} />
+                </a>
+              )}
             </div>
           </div>
 
