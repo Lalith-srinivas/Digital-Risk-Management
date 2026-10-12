@@ -1573,14 +1573,6 @@ export default function XylophoneHelix(props = {}) {
             lastHitIndex = -1;
         };
 
-        const onWheel = (event) => {
-            event.preventDefault();
-            let delta = event.deltaY;
-            if (event.deltaMode === 1) delta *= 16;
-            else if (event.deltaMode === 2) delta *= root.clientHeight || 800;
-            input.deltaScrollY += Math.max(-MAX_SCROLL_PER_EVENT, Math.min(MAX_SCROLL_PER_EVENT, delta));
-        };
-
         const onTouchStart = (event) => {
             const touch = event.touches[0];
             if (!touch) return;
@@ -1611,12 +1603,7 @@ export default function XylophoneHelix(props = {}) {
             if (gesture.axis === "x") {
                 addSpin(touch.clientX - gesture.prevX);
                 gesture.prevX = touch.clientX;
-                return;
             }
-
-            const delta = (gesture.prevY - touch.clientY) * DRAG_SCALE;
-            input.deltaScrollY += Math.max(-MAX_SCROLL_PER_EVENT, Math.min(MAX_SCROLL_PER_EVENT, delta));
-            gesture.prevY = touch.clientY;
         };
 
         const onTouchEnd = () => {
@@ -1629,7 +1616,6 @@ export default function XylophoneHelix(props = {}) {
         window.addEventListener("pointercancel", onWindowPointerUp, { passive: true });
         root.addEventListener("pointermove", onPointerMove, { passive: true });
         root.addEventListener("pointerleave", onPointerLeave, { passive: true });
-        root.addEventListener("wheel", onWheel, { passive: false });
         root.addEventListener("touchstart", onTouchStart, { passive: true });
         root.addEventListener("touchmove", onTouchMove, { passive: true });
         window.addEventListener("touchend", onTouchEnd, { passive: true });
@@ -1856,10 +1842,8 @@ export default function XylophoneHelix(props = {}) {
         };
 
         const updateScroll = (delta, spinSpeed) => {
-            phaseTarget += input.deltaScrollY * SCROLL.sensitivity;
             phaseTarget -= input.deltaSpinX * live.current.dragTurns * count;
             phaseCurrent += (phaseTarget - phaseCurrent) * (1 - Math.exp(-SCROLL.lerp * delta));
-            input.deltaScrollY = 0;
             input.deltaSpinX = 0;
 
             spinAngle = wrap(spinAngle + spinSpeed * delta, 2 * Math.PI);
@@ -2024,7 +2008,6 @@ export default function XylophoneHelix(props = {}) {
             window.removeEventListener("pointercancel", onWindowPointerUp);
             root.removeEventListener("pointermove", onPointerMove);
             root.removeEventListener("pointerleave", onPointerLeave);
-            root.removeEventListener("wheel", onWheel);
             root.removeEventListener("touchstart", onTouchStart);
             root.removeEventListener("touchmove", onTouchMove);
             window.removeEventListener("touchend", onTouchEnd);
@@ -2077,7 +2060,7 @@ export default function XylophoneHelix(props = {}) {
                 overflow: "hidden",
                 isolation: "isolate",
                 background,
-                touchAction: "none",
+                touchAction: "pan-y",
                 userSelect: "none",
                 WebkitUserSelect: "none",
                 ...style,

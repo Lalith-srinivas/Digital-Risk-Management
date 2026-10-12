@@ -19,23 +19,131 @@ export default function LandingPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#ffffff', color: '#0f172a', display: 'flex', flexDirection: 'column' }}>
-      {/* Top Navbar */}
-      <header style={{
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        padding: '16px 32px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: 'rgba(3, 5, 12, 0.85)',
-        backdropFilter: 'blur(16px)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <style>{`
+        .floating-navbar {
+          position: fixed;
+          top: 16px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: min(1140px, calc(100% - 32px));
+          z-index: 100;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 22px;
+          border-radius: 9999px;
+          background: rgba(7, 10, 24, 0.76);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45), 0 1px 1px rgba(255, 255, 255, 0.1) inset;
+          transition: all 0.25s ease;
+        }
+
+        .nav-protection-badge {
+          display: inline-block;
+          font-size: 11px;
+          color: #c7d2fe;
+          font-weight: 600;
+          margin-left: 8px;
+          background: rgba(99, 102, 241, 0.25);
+          border: 1px solid rgba(129, 140, 248, 0.3);
+          padding: 2px 8px;
+          border-radius: 12px;
+          white-space: nowrap;
+        }
+
+        .nav-signin-btn {
+          padding: 7px 16px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #f8fafc;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          white-space: nowrap;
+        }
+        .nav-signin-btn:hover {
+          background: rgba(255, 255, 255, 0.16);
+          color: #ffffff;
+        }
+
+        .nav-start-btn {
+          padding: 7px 18px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #ffffff;
+          background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+          border: none;
+          border-radius: 9999px;
+          cursor: pointer;
+          box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4);
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          white-space: nowrap;
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .nav-start-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(79, 70, 229, 0.55);
+        }
+
+        .nav-start-text-full {
+          display: inline;
+        }
+        .nav-start-text-mobile {
+          display: none;
+        }
+
+        @media (max-width: 640px) {
+          .floating-navbar {
+            top: 10px;
+            width: calc(100% - 20px);
+            padding: 8px 12px;
+            border-radius: 9999px;
+          }
+          .nav-protection-badge {
+            display: none !important;
+          }
+          .nav-signin-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+          }
+          .nav-start-btn {
+            padding: 6px 13px;
+            font-size: 12px;
+            gap: 4px;
+          }
+          .nav-start-text-full {
+            display: none;
+          }
+          .nav-start-text-mobile {
+            display: inline;
+          }
+          .hero-content-box {
+            padding: 105px 16px 50px !important;
+          }
+          .hero-title-main {
+            font-size: 34px !important;
+            line-height: 1.15 !important;
+          }
+          .hero-desc-main {
+            font-size: 15px !important;
+            margin-bottom: 24px !important;
+          }
+        }
+      `}</style>
+
+      {/* Floating Navbar */}
+      <header className="floating-navbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
           <div style={{
-            width: '38px',
-            height: '38px',
+            width: '36px',
+            height: '36px',
+            minWidth: '36px',
             borderRadius: '10px',
             background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
             display: 'flex',
@@ -44,51 +152,30 @@ export default function LandingPage() {
             color: '#fff',
             boxShadow: '0 4px 12px rgba(79, 70, 229, 0.35)',
           }}>
-            <ShieldAlert size={22} />
+            <ShieldAlert size={20} />
           </div>
-          <div>
-            <span style={{ fontSize: '18px', fontWeight: '800', letterSpacing: '-0.5px', color: '#ffffff' }}>SOC 360</span>
-            <span style={{ fontSize: '11px', color: '#c7d2fe', fontWeight: '600', marginLeft: '8px', background: 'rgba(99, 102, 241, 0.25)', border: '1px solid rgba(129, 140, 248, 0.3)', padding: '2px 8px', borderRadius: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+            <span style={{ fontSize: '17px', fontWeight: '800', letterSpacing: '-0.5px', color: '#ffffff', whiteSpace: 'nowrap' }}>SOC 360</span>
+            <span className="nav-protection-badge">
               Digital Risk Protection
             </span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <button
             onClick={() => navigate('/login')}
-            style={{
-              padding: '8px 18px',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#f8fafc',
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
+            className="nav-signin-btn"
           >
             Sign In
           </button>
           <button
             onClick={() => navigate('/scan')}
-            style={{
-              padding: '8px 20px',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#ffffff',
-              background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              boxShadow: '0 4px 16px rgba(79, 70, 229, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
+            className="nav-start-btn"
           >
-            Start Monitoring <ArrowRight size={15} />
+            <span className="nav-start-text-full">Start Monitoring</span>
+            <span className="nav-start-text-mobile">Start</span>
+            <ArrowRight size={14} />
           </button>
         </div>
       </header>
@@ -156,15 +243,18 @@ export default function LandingPage() {
         }} />
 
         {/* Hero Content Container */}
-        <div style={{
-          position: 'relative',
-          zIndex: 3,
-          maxWidth: '1100px',
-          margin: '0 auto',
-          padding: '80px 24px 64px',
-          textAlign: 'center',
-          pointerEvents: 'none',
-        }}>
+        <div
+          className="hero-content-box"
+          style={{
+            position: 'relative',
+            zIndex: 3,
+            maxWidth: '1100px',
+            margin: '0 auto',
+            padding: '115px 24px 64px',
+            textAlign: 'center',
+            pointerEvents: 'none',
+          }}
+        >
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -182,15 +272,18 @@ export default function LandingPage() {
             <Sparkles size={16} /> Autonomous Brand Surveillance & Threat Detection
           </div>
 
-          <h1 style={{
-            fontSize: '54px',
-            fontWeight: '800',
-            lineHeight: '1.15',
-            letterSpacing: '-1px',
-            color: '#ffffff',
-            marginBottom: '20px',
-            textShadow: '0 2px 20px rgba(0, 0, 0, 0.7)',
-          }}>
+          <h1
+            className="hero-title-main"
+            style={{
+              fontSize: '54px',
+              fontWeight: '800',
+              lineHeight: '1.15',
+              letterSpacing: '-1px',
+              color: '#ffffff',
+              marginBottom: '20px',
+              textShadow: '0 2px 20px rgba(0, 0, 0, 0.7)',
+            }}
+          >
             Protect Your Brand Across the <br />
             <span style={{
               background: 'linear-gradient(135deg, #818cf8 0%, #c084fc 100%)',
@@ -201,14 +294,17 @@ export default function LandingPage() {
             </span>
           </h1>
 
-          <p style={{
-            fontSize: '19px',
-            color: '#cbd5e1',
-            maxWidth: '720px',
-            margin: '0 auto 36px',
-            lineHeight: '1.6',
-            textShadow: '0 1px 10px rgba(0, 0, 0, 0.6)',
-          }}>
+          <p
+            className="hero-desc-main"
+            style={{
+              fontSize: '19px',
+              color: '#cbd5e1',
+              maxWidth: '720px',
+              margin: '0 auto 36px',
+              lineHeight: '1.6',
+              textShadow: '0 1px 10px rgba(0, 0, 0, 0.6)',
+            }}
+          >
             Identify potential brand impersonation across social media and application marketplaces using explainable risk analysis.
           </p>
 
