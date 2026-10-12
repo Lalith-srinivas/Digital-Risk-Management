@@ -12,6 +12,7 @@ class Settings(BaseSettings):
 
     # Supabase optional credentials
     SUPABASE_URL: str = ""
+    SUPABASE_ANON_KEY: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
 
     # CORS Configuration
@@ -23,7 +24,7 @@ class Settings(BaseSettings):
     DETECTION_ENGINE_MODE: str = "internal_adapter"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "backend/.env", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")),
         env_file_encoding="utf-8",
         extra="ignore",
     )

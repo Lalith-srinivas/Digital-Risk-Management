@@ -7,7 +7,24 @@ from app.schemas.candidate import CandidateResponse
 
 
 class FindingStatusUpdate(BaseModel):
-    review_status: ReviewStatusEnum = Field(..., description="Updated human review status label")
+    review_status: Optional[str] = Field(None, description="Updated human review status label")
+    reviewStatus: Optional[str] = Field(None, description="CamelCase review status label")
+    reviewNotes: Optional[str] = Field(None, description="Analyst review notes")
+    review_notes: Optional[str] = Field(None, description="Analyst review notes")
+
+    def get_status_label(self) -> str:
+        val = (self.review_status or self.reviewStatus or "New").strip()
+        mapping = {
+            "needs review": "Under Review",
+            "under review": "Under Review",
+            "confirmed suspicious": "Confirmed Suspicious",
+            "confirmed": "Confirmed Suspicious",
+            "benign": "False Positive",
+            "false positive": "False Positive",
+            "resolved": "Resolved",
+            "new": "New",
+        }
+        return mapping.get(val.lower(), val)
 
 
 class FindingResponse(BaseModel):

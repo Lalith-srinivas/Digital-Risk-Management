@@ -20,6 +20,96 @@ const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:
 let isBackendLive = false;
 let lastHealthCheck = null;
 
+function normalizeFinding(f) {
+  if (!f) return null;
+  const cand = f.candidate || {};
+  const brand = f.brand || f.brandDetails || {};
+  const evidence = f.evidence || {};
+
+  // Build reasons if missing
+  let reasons = f.reasons;
+  if (!reasons || !reasons.length) {
+    if (evidence.reasons && Array.isArray(evidence.reasons)) {
+      reasons = evidence.reasons;
+    } else if (f.explanation) {
+      reasons = f.explanation.split('\n').filter(Boolean);
+    } else {
+      reasons = ['Automated similarity detection signal triggered'];
+    }
+  }
+
+  // Build evidenceSignals if missing
+  let evidenceSignals = f.evidenceSignals;
+  if (!evidenceSignals || !evidenceSignals.length) {
+    evidenceSignals = [];
+    if (evidence.name_similarity !== undefined) {
+      evidenceSignals.push({
+        name: 'Lexical Trademark Similarity',
+        score: evidence.name_similarity,
+        detail: `RapidFuzz lexical match on protected brand trademark`
+      });
+    }
+    if (evidence.logo_similarity !== undefined && evidence.logo_similarity > 0) {
+      evidenceSignals.push({
+        name: 'Visual Trademark Perceptual Hash',
+        score: evidence.logo_similarity,
+        detail: 'ImageHash perceptual distance on brand visual mark'
+      });
+    }
+    if (evidence.developer_match !== undefined) {
+      evidenceSignals.push({
+        name: 'Publisher Identity Verification',
+        score: evidence.developer_match ? 10 : 85,
+        detail: evidence.developer_match ? 'Matched authorized corporate developer' : 'Publisher not in registered official developers'
+      });
+    }
+    if (evidence.official_url_match) {
+      evidenceSignals.push({
+        name: 'Official Domain Verification',
+        score: 0,
+        detail: 'Verified official corporate URL'
+      });
+    }
+    if (!evidenceSignals.length) {
+      evidenceSignals.push({
+        name: 'Heuristic Review Signal',
+        score: f.risk_score || f.riskScore || 50,
+        detail: 'Synthesized signal score'
+      });
+    }
+  }
+
+  return {
+    ...f,
+    id: String(f.id),
+    brandId: String(f.brand_id || f.brandId || ''),
+    brandName: brand.name || f.brandName || (f.brand_id ? 'Protected Brand' : ''),
+    candidateName: cand.candidate_name || f.candidate_name || f.candidateName || 'Candidate Identity',
+    candidateHandle: cand.username || cand.package_identifier || f.candidateHandle || f.packageId || '',
+    candidateUrl: cand.source_url || f.candidateUrl || '',
+    sourceType: f.source_type || f.sourceType || 'social',
+    platform: f.platform || (f.source_type === 'social' ? 'Social Media' : 'App Marketplace'),
+    riskScore: f.risk_score !== undefined ? f.risk_score : (f.riskScore || 0),
+    riskLevel: f.risk_level || f.riskLevel || 'Low',
+    avatarUrl: cand.image_url || f.avatarUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96&auto=format&fit=crop&q=80',
+    detectionDate: f.created_at || f.detectionDate || new Date().toISOString(),
+    reviewStatus: f.review_status || f.reviewStatus || 'New',
+    reviewNotes: f.reviewNotes || f.review_notes || '',
+    developer: cand.developer_name || f.developer || '',
+    packageId: cand.package_identifier || f.packageId || '',
+    reasons,
+    evidenceSignals,
+    isDemoData: Boolean(f.is_demo || f.isDemoData),
+    brandDetails: {
+      id: String(f.brand_id || f.brandId || ''),
+      name: brand.name || f.brandName || 'Protected Brand',
+      website: brand.website || '',
+      logo: brand.logo_url || brand.logo || '',
+      officialDevelopers: brand.official_developers || brand.developerNames || [],
+    }
+  };
+}
+
 export const api = {
   getBaseUrl() {
     return localStorage.getItem(CONFIG_KEYS.BASE_URL) || DEFAULT_API_BASE;
@@ -102,7 +192,7 @@ export const api = {
     const url = `${baseUrl}${cleanEndpoint}`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), options.timeout || 6000);
+    const timeout = setTimeout(() => controller.abort(), options.timeout || 10000);
 
     try {
       const response = await fetch(url, {
@@ -146,9 +236,9 @@ export const api = {
   async getBrands() {
     try {
       const data = await this.request('/brands');
-      return { data: Array.isArray(data) ? data : data.brands || [], isDemoData: false };
+      const list = Array.isArray(data) ? data : data.brands || [];
+      return { data: list, isDemoData: false };
     } catch (err) {
-      // Fallback to Demo Data
       const { brands } = getStoredDemoData();
       return { data: brands, isDemoData: true, notice: 'Demonstration dataset active (backend offline)' };
     }
@@ -173,7 +263,6 @@ export const api = {
       });
       return { data, isDemoData: false };
     } catch (err) {
-      // Demo store mutation
       const { brands, findings, scans } = getStoredDemoData();
       const newBrand = {
         id: `brand-${Date.now()}`,
@@ -210,79 +299,130 @@ export const api = {
     }
   },
 
+  /**
+   * Primary Brand-First Orchestration Scan:
+   * Executes coordinated social & app store monitoring for a registered brand.
+   */
+  async scanBrand(brandId, isDemo = true) {
+    try {
+      const data = await this.request(`/brands/${brandId}/scan?is_demo=${isDemo}`, {
+        method: 'POST'
+      });
+      return { data, isDemoData: false };
+    } catch (err) {
+      // Fallback demo scan simulation
+      const { brands, findings, scans } = getStoredDemoData();
+      const brand = brands.find(b => b.id === brandId) || brands[0];
+
+      const simScan = {
+        id: `scan-${Date.now()}`,
+        brandName: brand ? brand.name : 'Target Brand',
+        type: 'Combined Surveillance Scan',
+        target: 'Social & Mobile App Ecosystem',
+        timestamp: new Date().toISOString(),
+        duration: '18s',
+        candidatesAnalyzed: 8,
+        findingsGenerated: 3,
+        status: 'Completed',
+        isDemoData: true
+      };
+
+      const updatedScans = [simScan, ...scans];
+      saveStoredDemoData({ brands, findings, scans: updatedScans });
+
+      return {
+        data: {
+          brand_id: brandId,
+          brand_name: brand ? brand.name : 'Target Brand',
+          status: 'completed',
+          candidates_analyzed: 8,
+          findings_generated: 3,
+          scans: [simScan],
+          findings: findings.slice(0, 3)
+        },
+        isDemoData: true
+      };
+    }
+  },
+
   // ==========================================
   // SCANS (Social & Apps)
   // ==========================================
 
   async scanSocial(scanPayload) {
     try {
+      // If manual candidate payload provided
+      let body;
+      if (scanPayload.candidateName || scanPayload.handle || scanPayload.profileUrl) {
+        body = {
+          brand_id: scanPayload.brandId,
+          candidates: [{
+            display_name: scanPayload.candidateName || scanPayload.handle,
+            username: scanPayload.handle,
+            profile_url: scanPayload.profileUrl,
+            platform: scanPayload.platform || 'Twitter/X',
+            bio: scanPayload.description,
+            image_url: scanPayload.avatarUrl,
+            is_demo: true,
+          }],
+          is_demo: true,
+        };
+      } else {
+        // Brand-first scan (auto-discovery)
+        body = {
+          brand_id: scanPayload.brandId,
+          is_demo: true,
+        };
+      }
+
       const data = await this.request('/scan/social', {
         method: 'POST',
-        body: JSON.stringify(scanPayload)
+        body: JSON.stringify(body)
       });
       return { data, isDemoData: false };
     } catch (err) {
-      // Simulate realistic detection engine analysis
       const { brands, findings, scans } = getStoredDemoData();
       const brand = brands.find(b => b.id === scanPayload.brandId) || brands[0];
 
-      const candidateName = scanPayload.candidateName || scanPayload.handle || 'Candidate Social Handle';
+      const candidateName = scanPayload.candidateName || scanPayload.handle || `${brand ? brand.name : 'Brand'} Helpdesk`;
       const handle = scanPayload.handle || '@' + candidateName.toLowerCase().replace(/\s+/g, '_');
-
-      // Calculate heuristic scores based on inputs
-      const isKnownBenign = candidateName.toLowerCase().includes('fan') || candidateName.toLowerCase().includes('community');
-      const riskScore = isKnownBenign ? 28 : (scanPayload.riskScore || Math.floor(Math.random() * 20 + 75));
-      const riskLevel = riskScore >= 75 ? 'High' : riskScore >= 45 ? 'Medium' : 'Low';
-      const nameSim = Math.floor(Math.random() * 15 + 82);
-      const logoSim = Math.floor(Math.random() * 20 + 70);
+      const riskScore = 84;
+      const riskLevel = 'High';
 
       const newFinding = {
         id: `find-${Date.now()}`,
-        brandId: brand.id,
-        brandName: brand.name,
+        brandId: brand ? brand.id : 'brand-1',
+        brandName: brand ? brand.name : 'Enterprise Brand',
         candidateName,
         sourceType: 'social',
         platform: scanPayload.platform || 'Twitter/X',
         candidateHandle: handle,
         candidateUrl: scanPayload.profileUrl || `https://x.com/${handle.replace('@', '')}`,
-        avatarUrl: scanPayload.avatarUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96&auto=format&fit=crop&q=80',
+        avatarUrl: scanPayload.avatarUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96',
         riskScore,
         riskLevel,
-        nameSimilarity: nameSim,
-        logoSimilarity: logoSim,
+        nameSimilarity: 88,
+        logoSimilarity: 78,
         detectionDate: new Date().toISOString(),
-        reviewStatus: 'Needs Review',
-        verdict: riskLevel === 'High' ? 'Suspicious Impersonator' : riskLevel === 'Medium' ? 'Questionable Handle' : 'Benign Profile',
-        reasons: [
-          `Detected ${nameSim}% lexical match to target protected trademark "${brand.name}"`,
-          logoSim > 70 ? `Perceptual visual icon similarity of ${logoSim}% indicates probable brand asset reproduction` : 'Distinct profile imagery observed',
-          scanPayload.description?.toLowerCase().includes('support') ? 'Profile bio claims customer support or assistance capability' : 'Non-verified account claiming brand association'
-        ],
-        evidenceSignals: [
-          { name: 'Handle Syntactic Distance', score: nameSim, detail: `Compared with official handles of ${brand.name}` },
-          { name: 'Emblem/Logo Perceptual Hash', score: logoSim, detail: 'Cosine distance on trademark visual embeddings' },
-          { name: 'Bio Keyword Extraction', score: 82, detail: 'Phishing keyword vectors and support terms analyzed' }
-        ],
-        reviewNotes: '',
+        reviewStatus: 'New',
+        reasons: [`Candidate claims official recovery / support capabilities for ${brand ? brand.name : 'Brand'}`],
         isDemoData: true
       };
 
       const newScan = {
         id: `scan-${Date.now()}`,
-        brandName: brand.name,
+        brandName: brand ? brand.name : 'Target Brand',
         type: 'Social Profiles Scan',
-        target: scanPayload.platform || 'Social Media',
+        target: 'Social Media',
         timestamp: new Date().toISOString(),
         duration: '14s',
-        candidatesAnalyzed: 1,
+        candidatesAnalyzed: 5,
         findingsGenerated: 1,
         status: 'Completed',
         isDemoData: true
       };
 
-      const updatedFindings = [newFinding, ...findings];
-      const updatedScans = [newScan, ...scans];
-      saveStoredDemoData({ brands, findings: updatedFindings, scans: updatedScans });
+      saveStoredDemoData({ brands, findings: [newFinding, ...findings], scans: [newScan, ...scans] });
 
       return {
         data: {
@@ -297,80 +437,85 @@ export const api = {
 
   async scanApps(scanPayload) {
     try {
+      let body;
+      if (scanPayload.appName || scanPayload.storeUrl || scanPayload.packageId) {
+        body = {
+          brand_id: scanPayload.brandId,
+          candidates: [{
+            app_name: scanPayload.appName,
+            package_identifier: scanPayload.packageId,
+            developer_name: scanPayload.developer,
+            store_url: scanPayload.storeUrl,
+            store_type: scanPayload.storeType || 'APK Mirror',
+            description: scanPayload.description,
+            icon_url: scanPayload.iconUrl,
+            is_demo: true,
+          }],
+          is_demo: true,
+        };
+      } else {
+        body = {
+          brand_id: scanPayload.brandId,
+          is_demo: true,
+        };
+      }
+
       const data = await this.request('/scan/apps', {
         method: 'POST',
-        body: JSON.stringify(scanPayload)
+        body: JSON.stringify(body)
       });
       return { data, isDemoData: false };
     } catch (err) {
       const { brands, findings, scans } = getStoredDemoData();
       const brand = brands.find(b => b.id === scanPayload.brandId) || brands[0];
 
-      const appName = scanPayload.appName || 'Candidate Mobile App';
-      const packageId = scanPayload.packageId || `com.${appName.toLowerCase().replace(/[^a-z0-9]/g, '')}.app`;
-      const developer = scanPayload.developer || 'Unknown Publisher';
-
-      const riskScore = scanPayload.riskScore || Math.floor(Math.random() * 22 + 73);
-      const riskLevel = riskScore >= 75 ? 'High' : riskScore >= 45 ? 'Medium' : 'Low';
-      const nameSim = Math.floor(Math.random() * 15 + 80);
-      const iconSim = Math.floor(Math.random() * 20 + 75);
+      const appName = scanPayload.appName || `${brand ? brand.name : 'Brand'} Mobile Mod Pro`;
+      const packageId = scanPayload.packageId || `com.unauthorized.${appName.toLowerCase().replace(/[^a-z0-9]/g, '')}.app`;
+      const riskScore = 86;
+      const riskLevel = 'High';
 
       const newFinding = {
         id: `find-${Date.now()}`,
-        brandId: brand.id,
-        brandName: brand.name,
+        brandId: brand ? brand.id : 'brand-1',
+        brandName: brand ? brand.name : 'Target Brand',
         candidateName: appName,
         sourceType: 'app',
         platform: scanPayload.storeType || 'Third-Party APK Store',
         candidateHandle: packageId,
-        candidateUrl: scanPayload.storeUrl || 'https://example-market.store/app',
-        avatarUrl: scanPayload.iconUrl || 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=96&auto=format&fit=crop&q=80',
-        developer,
+        candidateUrl: scanPayload.storeUrl || 'https://apk-mirror-store.example/app',
+        avatarUrl: scanPayload.iconUrl || 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=96',
+        developer: scanPayload.developer || 'Unknown Publisher',
         packageId,
         riskScore,
         riskLevel,
-        nameSimilarity: nameSim,
-        logoSimilarity: iconSim,
+        nameSimilarity: 85,
+        logoSimilarity: 80,
         detectionDate: new Date().toISOString(),
-        reviewStatus: 'Needs Review',
-        verdict: riskLevel === 'High' ? 'High Risk Impersonating App' : 'Questionable Derivative Application',
-        reasons: [
-          `App title overlaps significantly (${nameSim}%) with protected brand "${brand.name}"`,
-          `Publisher "${developer}" is not in the approved official developer list for this brand`,
-          'Store repository signature does not match brand corporate release keys',
-          'Application contains generic financial/login redirect components'
-        ],
-        evidenceSignals: [
-          { name: 'Package Namespace Heuristics', score: 88, detail: `Package ID: ${packageId}` },
-          { name: 'App Icon Perceptual Hash', score: iconSim, detail: 'High similarity to official mobile application icon' },
-          { name: 'Developer Identity Verification', score: 92, detail: 'Publisher not registered as brand authorized entity' }
-        ],
-        reviewNotes: '',
+        reviewStatus: 'New',
+        reasons: ['Publisher identity does not match official authorized developer list'],
         isDemoData: true
       };
 
       const newScan = {
         id: `scan-${Date.now()}`,
-        brandName: brand.name,
+        brandName: brand ? brand.name : 'Target Brand',
         type: 'App Store Discovery',
-        target: scanPayload.storeType || 'APK Distribution Channels',
+        target: 'APK Distribution Channels',
         timestamp: new Date().toISOString(),
-        duration: '22s',
-        candidatesAnalyzed: 1,
+        duration: '19s',
+        candidatesAnalyzed: 3,
         findingsGenerated: 1,
         status: 'Completed',
         isDemoData: true
       };
 
-      const updatedFindings = [newFinding, ...findings];
-      const updatedScans = [newScan, ...scans];
-      saveStoredDemoData({ brands, findings: updatedFindings, scans: updatedScans });
+      saveStoredDemoData({ brands, findings: [newFinding, ...findings], scans: [newScan, ...scans] });
 
       return {
         data: {
           finding: newFinding,
           scan: newScan,
-          summary: `App analysis complete. Heuristic score computed at ${riskScore}/100 (${riskLevel}).`
+          summary: `App analysis complete. Review priority score: ${riskScore}/100 (${riskLevel}).`
         },
         isDemoData: true
       };
@@ -384,14 +529,17 @@ export const api = {
   async getFindings(filters = {}) {
     try {
       const queryParams = new URLSearchParams();
-      if (filters.brandId) queryParams.set('brand_id', filters.brandId);
-      if (filters.sourceType) queryParams.set('source_type', filters.sourceType);
-      if (filters.riskLevel) queryParams.set('risk_level', filters.riskLevel);
+      if (filters.brandId && filters.brandId !== 'all') queryParams.set('brand_id', filters.brandId);
+      if (filters.sourceType && filters.sourceType !== 'all') queryParams.set('source_type', filters.sourceType);
+      if (filters.riskLevel && filters.riskLevel !== 'all') queryParams.set('risk_level', filters.riskLevel);
+      if (filters.reviewStatus && filters.reviewStatus !== 'all') queryParams.set('review_status', filters.reviewStatus);
       if (filters.search) queryParams.set('q', filters.search);
 
       const qs = queryParams.toString();
       const data = await this.request(`/findings${qs ? `?${qs}` : ''}`);
-      return { data: Array.isArray(data) ? data : data.findings || [], isDemoData: false };
+      const rawList = Array.isArray(data) ? data : (data.items || data.findings || []);
+      const normalized = rawList.map(normalizeFinding);
+      return { data: normalized, isDemoData: false };
     } catch (err) {
       const { findings } = getStoredDemoData();
       let filtered = [...findings];
@@ -403,41 +551,39 @@ export const api = {
         filtered = filtered.filter(f => f.sourceType === filters.sourceType);
       }
       if (filters.riskLevel && filters.riskLevel !== 'all') {
-        filtered = filtered.filter(f => f.riskLevel.toLowerCase() === filters.riskLevel.toLowerCase());
+        filtered = filtered.filter(f => f.riskLevel?.toLowerCase() === filters.riskLevel.toLowerCase());
       }
       if (filters.reviewStatus && filters.reviewStatus !== 'all') {
-        filtered = filtered.filter(f => f.reviewStatus.toLowerCase() === filters.reviewStatus.toLowerCase());
+        filtered = filtered.filter(f => f.reviewStatus?.toLowerCase() === filters.reviewStatus.toLowerCase());
       }
       if (filters.search) {
         const q = filters.search.toLowerCase();
         filtered = filtered.filter(f =>
-          f.candidateName.toLowerCase().includes(q) ||
-          f.brandName.toLowerCase().includes(q) ||
+          (f.candidateName && f.candidateName.toLowerCase().includes(q)) ||
+          (f.brandName && f.brandName.toLowerCase().includes(q)) ||
           (f.candidateHandle && f.candidateHandle.toLowerCase().includes(q))
         );
       }
 
-      // Sort
       if (filters.sortBy === 'riskScore') {
         filtered.sort((a, b) => b.riskScore - a.riskScore);
       } else {
-        // default by date descending
         filtered.sort((a, b) => new Date(b.detectionDate) - new Date(a.detectionDate));
       }
 
-      return { data: filtered, isDemoData: true };
+      return { data: filtered.map(normalizeFinding), isDemoData: true };
     }
   },
 
   async getFindingById(id) {
     try {
       const data = await this.request(`/findings/${id}`);
-      return { data, isDemoData: false };
+      return { data: normalizeFinding(data), isDemoData: false };
     } catch (err) {
       const { findings, brands } = getStoredDemoData();
       const finding = findings.find(f => f.id === id) || findings[0];
-      const brand = brands.find(b => b.id === finding.brandId) || brands[0];
-      return { data: { ...finding, brandDetails: brand }, isDemoData: true };
+      const brand = brands.find(b => b.id === (finding ? finding.brandId : '')) || brands[0];
+      return { data: normalizeFinding({ ...finding, brandDetails: brand }), isDemoData: true };
     }
   },
 
@@ -447,7 +593,7 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify({ reviewStatus: newStatus, reviewNotes: notes })
       });
-      return { data, isDemoData: false };
+      return { data: normalizeFinding(data), isDemoData: false };
     } catch (err) {
       const { brands, findings, scans } = getStoredDemoData();
       const updatedFindings = findings.map(f => {
@@ -463,7 +609,7 @@ export const api = {
       });
       saveStoredDemoData({ brands, findings: updatedFindings, scans });
       const updated = updatedFindings.find(f => f.id === id);
-      return { data: updated, isDemoData: true };
+      return { data: normalizeFinding(updated), isDemoData: true };
     }
   },
 
@@ -474,16 +620,21 @@ export const api = {
   async getDashboardStats() {
     try {
       const data = await this.request('/stats');
-      return { data, isDemoData: false };
+      return {
+        data: {
+          ...data,
+          recentFindings: (data.recentFindings || []).map(normalizeFinding),
+        },
+        isDemoData: false
+      };
     } catch (err) {
       const { brands, findings, scans } = getStoredDemoData();
 
       const totalBrands = brands.length;
       const socialFindings = findings.filter(f => f.sourceType === 'social').length;
       const appFindings = findings.filter(f => f.sourceType === 'app').length;
-      const suspiciousFindings = findings.filter(f => f.riskScore >= 60).length;
+      const suspiciousFindings = findings.filter(f => (f.riskScore || 0) >= 60).length;
 
-      // Realistic scan volume estimates
       const socialScanned = 1248 + findings.length * 12;
       const appsScanned = 412 + findings.length * 4;
 
@@ -507,7 +658,7 @@ export const api = {
           suspiciousFindings,
           riskCounts,
           sourceCounts,
-          recentFindings: findings.slice(0, 5),
+          recentFindings: findings.slice(0, 5).map(normalizeFinding),
           recentScans: scans.slice(0, 4)
         },
         isDemoData: true

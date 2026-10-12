@@ -136,12 +136,13 @@ export default function BrandProfiles() {
     });
   };
 
+  const [scanningBrandId, setScanningBrandId] = useState(null);
+  const [scanNotification, setScanNotification] = useState('');
+
   const validateForm = () => {
     const errors = {};
     if (!formData.name.trim()) errors.name = 'Brand name is required';
-    if (!formData.website.trim()) {
-      errors.website = 'Official website URL is required';
-    } else if (!/^https?:\/\//i.test(formData.website)) {
+    if (formData.website.trim() && !/^https?:\/\//i.test(formData.website)) {
       errors.website = 'Website must start with http:// or https://';
     }
     setFormErrors(errors);
@@ -164,15 +165,26 @@ export default function BrandProfiles() {
       const payload = {
         name: formData.name.trim(),
         category: formData.category.trim() || 'General Enterprise',
-        website: formData.website.trim(),
-        logo: formData.logo.trim(),
+        website: formData.website.trim() || undefined,
+        logo: formData.logo.trim() || undefined,
         aliases: cleanAliases,
         officialSocials: cleanSocials,
         officialApps: cleanApps,
         developerNames: devList
       };
 
-      await api.createBrand(payload);
+      const res = await api.createBrand(payload);
+      const newBrand = res.data;
+
+      // Start initial monitoring automatically for newly registered brand
+      if (newBrand?.id) {
+        try {
+          await api.scanBrand(newBrand.id);
+        } catch (scanErr) {
+          console.warn('Initial scan error:', scanErr);
+        }
+      }
+
       setSubmitSuccess(true);
       setTimeout(() => {
         setIsAddModalOpen(false);
@@ -205,8 +217,19 @@ export default function BrandProfiles() {
     }
   };
 
-  const handleInitiateScan = (brand) => {
-    navigate(`/social-monitoring?brandId=${brand.id}`);
+  const handleInitiateScan = async (brand) => {
+    setScanningBrandId(brand.id);
+    try {
+      const res = await api.scanBrand(brand.id);
+      const count = res.data?.findings_generated || res.data?.findings?.length || 0;
+      setScanNotification(`Monitoring scan completed for ${brand.name}: ${count} findings evaluated.`);
+      setTimeout(() => setScanNotification(''), 5000);
+      await fetchBrands();
+    } catch (err) {
+      alert(`Monitoring scan failed: ${err.message}`);
+    } finally {
+      setScanningBrandId(null);
+    }
   };
 
   // Columns for DataTable
@@ -313,10 +336,11 @@ export default function BrandProfiles() {
           <button
             className="btn btn-primary btn-sm"
             onClick={() => handleInitiateScan(row)}
+            disabled={scanningBrandId === row.id}
             title="Initiate Impersonation Scan"
           >
             <Play size={12} fill="#fff" />
-            <span>Scan</span>
+            <span>{scanningBrandId === row.id ? 'Scanning...' : 'Start Monitoring'}</span>
           </button>
 
           <button
@@ -337,6 +361,23 @@ export default function BrandProfiles() {
       <DemoBanner isDemo={isDemo} />
 
       <div className="page-content">
+        {scanNotification && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '12px 18px',
+            backgroundColor: '#ecfdf5',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid #a7f3d0',
+            color: '#047857',
+            fontSize: '0.84rem',
+            marginBottom: 16
+          }}>
+            <CheckCircle size={18} />
+            <span>{scanNotification}</span>
+          </div>
+        )}
         {/* Page Top Actions Bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
           <div style={{ position: 'relative', width: 280 }}>
@@ -624,7 +665,7 @@ export default function BrandProfiles() {
               className="btn btn-primary"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Registering...' : 'Save Brand Profile'}
+              {isSubmitting ? 'Registering & Initiating Monitoring...' : 'Save Brand & Start Monitoring'}
             </button>
           </div>
         </form>

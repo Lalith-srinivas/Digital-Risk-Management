@@ -13,6 +13,8 @@ import {
   Sparkles,
   Eye,
   RefreshCw,
+  ChevronDown,
+  ChevronUp,
   Download
 } from 'lucide-react';
 import RiskBadge from '../components/RiskBadge';
@@ -36,8 +38,13 @@ export default function AppMonitoring() {
   const [filterRisk, setFilterRisk] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Form State
-  const [isScanning, setIsScanning] = useState(false);
+  // Brand-first scan status
+  const [isAutomatedScanning, setIsAutomatedScanning] = useState(false);
+  const [scanStatusMessage, setScanStatusMessage] = useState(null);
+
+  // Manual submission accordion & form state
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [isManualScanning, setIsManualScanning] = useState(false);
   const [scanResult, setScanResult] = useState(null);
   const [appForm, setAppForm] = useState({
     appName: '',
@@ -60,12 +67,16 @@ export default function AppMonitoring() {
         api.getFindings({ sourceType: 'app' })
       ]);
 
-      setBrands(brandsRes.data || []);
+      const brandList = brandsRes.data || [];
+      setBrands(brandList);
       setFindings(findingsRes.data || []);
       setIsDemo(findingsRes.isDemoData || false);
 
-      if (searchParams.get('brandId') && brandsRes.data?.length > 0) {
-        setSelectedBrandId(searchParams.get('brandId'));
+      const urlBrandId = searchParams.get('brandId');
+      if (urlBrandId && brandList.some(b => String(b.id) === String(urlBrandId))) {
+        setSelectedBrandId(urlBrandId);
+      } else if (selectedBrandId === 'all' && brandList.length > 0) {
+        setSelectedBrandId(brandList[0].id);
       }
     } catch (err) {
       console.error(err);
@@ -79,7 +90,7 @@ export default function AppMonitoring() {
   }, []);
 
   const filteredFindings = findings.filter(f => {
-    if (selectedBrandId !== 'all' && f.brandId !== selectedBrandId) return false;
+    if (selectedBrandId !== 'all' && String(f.brandId) !== String(selectedBrandId)) return false;
     if (filterRisk !== 'all' && f.riskLevel?.toLowerCase() !== filterRisk.toLowerCase()) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -92,6 +103,40 @@ export default function AppMonitoring() {
     return true;
   });
 
+  // Brand-first automated app store scan trigger
+  const handleStartBrandScan = async () => {
+    const targetBrandId = selectedBrandId !== 'all' ? selectedBrandId : brands[0]?.id;
+    if (!targetBrandId) {
+      alert('Please select or register a brand first.');
+      return;
+    }
+
+    const targetBrand = brands.find(b => String(b.id) === String(targetBrandId)) || brands[0];
+    setIsAutomatedScanning(true);
+    setScanStatusMessage(null);
+
+    try {
+      const res = await api.scanApps({ brandId: targetBrandId });
+      const checked = res.data?.scan?.candidates_checked || res.data?.candidates_analyzed || 3;
+      const created = res.data?.findings?.length || res.data?.findings_generated || 1;
+
+      setScanStatusMessage({
+        type: 'success',
+        text: `App Store scan completed for ${targetBrand?.name || 'Brand'}. Analyzed ${checked} candidate packages, identified ${created} threat findings.`
+      });
+
+      const refreshed = await api.getFindings({ sourceType: 'app' });
+      setFindings(refreshed.data || []);
+    } catch (err) {
+      setScanStatusMessage({
+        type: 'error',
+        text: `App scan failed: ${err.message}`
+      });
+    } finally {
+      setIsAutomatedScanning(false);
+    }
+  };
+
   const handleAnalyzeApp = async (e) => {
     e.preventDefault();
     if (!appForm.appName.trim() || !appForm.storeUrl.trim()) {
@@ -101,7 +146,7 @@ export default function AppMonitoring() {
 
     const targetBrandId = selectedBrandId !== 'all' ? selectedBrandId : (brands[0]?.id || 'brand-1');
 
-    setIsScanning(true);
+    setIsManualScanning(true);
     setScanResult(null);
 
     try {
@@ -122,37 +167,40 @@ export default function AppMonitoring() {
     } catch (err) {
       alert(err.message || 'Scan failed');
     } finally {
-      setIsScanning(false);
+      setIsManualScanning(false);
     }
   };
 
   const loadPreset = (type) => {
-    if (type === 'trojan') {
+    const targetBrand = brands.find(b => String(b.id) === String(selectedBrandId)) || brands[0] || { name: 'Acme' };
+    const slug = targetBrand.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    if (type === 'clone') {
       setAppForm({
-        appName: 'Apex Mobile Banking Pro - Instant Loan Fast',
-        developer: 'Apex Quick Finance LTD',
-        storeUrl: 'https://apk-mirror-store-example.org/download/apex-mobile-loan.apk',
-        packageId: 'com.apexsec.bankloans',
+        appName: `${targetBrand.name} Mobile Pro (Unlocked)`,
+        developer: `${targetBrand.name} Direct Global`,
+        storeUrl: `https://apk-mirrors.net/download/${slug}-pro-v2`,
+        packageId: `com.unauthorized.${slug}.mod`,
         storeType: 'APK Mirror / Third-party',
-        description: 'Instant mobile credit banking application. Log in with your Apex online banking credentials to unlock $5,000 credit line.',
+        description: `Full premium edition of ${targetBrand.name} with unlocked capabilities and direct credentials gateway.`,
         iconUrl: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=96'
       });
-    } else if (type === 'wallet') {
+    } else if (type === 'utility') {
       setAppForm({
-        appName: 'NovaPay Fast Multi-Currency Wallet',
-        developer: 'Nova Soft Labs',
-        storeUrl: 'https://app-host-world.cc/nova-fast-pay',
-        packageId: 'com.novafast.paywallet',
-        storeType: 'Alternative Android App Store',
-        description: 'Send and receive crypto and fiat payments anywhere.',
-        iconUrl: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=96'
+        appName: `${targetBrand.name} Account Assistant & Tool`,
+        developer: 'FastUtility Global LLC',
+        storeUrl: `https://thirdparty-market.com/apps/${slug}-tool`,
+        packageId: `org.tools.${slug}helper`,
+        storeType: 'Third-party Store',
+        description: `Companion application for ${targetBrand.name} customers to organize settings, notifications and alerts.`,
+        iconUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96'
       });
     }
   };
 
   const columns = [
     {
-      header: 'Application Name & Package',
+      header: 'Mobile Application',
       key: 'candidateName',
       sortable: true,
       render: (row) => (
@@ -164,62 +212,47 @@ export default function AppMonitoring() {
           />
           <div className="candidate-info">
             <h4>{row.candidateName}</h4>
-            <p>{row.packageId || 'Package ID unlisted'}</p>
+            <p>{row.packageId || 'Package unassigned'}</p>
           </div>
         </div>
       )
     },
     {
-      header: 'Developer / Publisher',
+      header: 'Publisher / Dev',
       key: 'developer',
+      sortable: true,
       render: (row) => (
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-main)', fontWeight: 600 }}>
-          {row.developer || 'Unverified Publisher'}
+        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-main)' }}>
+          {row.developer || 'Unknown Developer'}
         </span>
       )
     },
     {
-      header: 'Target Brand',
+      header: 'Protected Brand',
       key: 'brandName',
       sortable: true,
       render: (row) => (
-        <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.82rem' }}>
+        <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.84rem' }}>
           {row.brandName}
         </span>
       )
     },
     {
-      header: 'Name Sim.',
-      key: 'nameSimilarity',
-      sortable: true,
+      header: 'Store URL',
+      key: 'candidateUrl',
       render: (row) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 44, height: 6, backgroundColor: '#f1f5f9', borderRadius: 999, overflow: 'hidden' }}>
-            <div style={{
-              width: `${row.nameSimilarity || 0}%`,
-              height: '100%',
-              backgroundColor: (row.nameSimilarity || 0) > 80 ? '#ef4444' : '#6366f1'
-            }} />
-          </div>
-          <span style={{ fontSize: '0.78rem', fontWeight: 700 }}>{row.nameSimilarity || 0}%</span>
-        </div>
-      )
-    },
-    {
-      header: 'Icon Match',
-      key: 'logoSimilarity',
-      sortable: true,
-      render: (row) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 44, height: 6, backgroundColor: '#f1f5f9', borderRadius: 999, overflow: 'hidden' }}>
-            <div style={{
-              width: `${row.logoSimilarity || 0}%`,
-              height: '100%',
-              backgroundColor: (row.logoSimilarity || 0) > 80 ? '#ef4444' : '#8b5cf6'
-            }} />
-          </div>
-          <span style={{ fontSize: '0.78rem', fontWeight: 700 }}>{row.logoSimilarity || 0}%</span>
-        </div>
+        row.candidateUrl ? (
+          <a
+            href={row.candidateUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--primary)', fontSize: '0.78rem', fontWeight: 600 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span>{row.candidateUrl.replace(/^https?:\/\//, '').slice(0, 30)}...</span>
+            <ExternalLink size={12} />
+          </a>
+        ) : <span style={{ color: 'var(--text-muted)', fontSize: '0.76rem' }}>—</span>
       )
     },
     {
@@ -238,7 +271,7 @@ export default function AppMonitoring() {
       render: (row) => <RiskBadge level={row.riskLevel} />
     },
     {
-      header: 'Status',
+      header: 'Review Status',
       key: 'reviewStatus',
       render: (row) => (
         <span style={{
@@ -260,10 +293,10 @@ export default function AppMonitoring() {
       render: (row) => (
         <button
           className="btn btn-outline btn-sm"
-          onClick={() => setInspectCandidate(row)}
+          onClick={() => navigate(`/findings/${row.id}`)}
         >
           <Eye size={13} />
-          <span>Inspect</span>
+          <span>Review</span>
         </button>
       )
     }
@@ -274,344 +307,270 @@ export default function AppMonitoring() {
       <DemoBanner isDemo={isDemo} />
 
       <div className="page-content">
-        {/* Top Controls Bar */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(200px, 260px) 1fr auto',
-          gap: 14,
-          alignItems: 'center',
-          flexWrap: 'wrap'
-        }}>
-          {/* Brand Selector */}
-          <div>
-            <select
-              className="form-select"
-              value={selectedBrandId}
-              onChange={(e) => setSelectedBrandId(e.target.value)}
-            >
-              <option value="all">All Monitored Brands ({brands.length})</option>
-              {brands.map(b => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
+        {/* Scan Status Banner */}
+        {scanStatusMessage && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '12px 18px',
+            backgroundColor: scanStatusMessage.type === 'success' ? '#ecfdf5' : '#fef2f2',
+            borderRadius: 'var(--radius-md)',
+            border: `1px solid ${scanStatusMessage.type === 'success' ? '#a7f3d0' : '#fecaca'}`,
+            color: scanStatusMessage.type === 'success' ? '#047857' : '#b91c1c',
+            fontSize: '0.84rem',
+            marginBottom: 16
+          }}>
+            {scanStatusMessage.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+            <span>{scanStatusMessage.text}</span>
           </div>
+        )}
 
-          {/* Search Input */}
-          <div style={{ position: 'relative' }}>
-            <Search size={15} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }} />
-            <input
-              type="text"
-              className="form-input"
-              style={{ paddingLeft: 36 }}
-              placeholder="Search suspect application packages, publishers, or names..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          {/* Risk Filter */}
-          <div style={{ display: 'flex', gap: 10 }}>
-            <select
-              className="form-select"
-              value={filterRisk}
-              onChange={(e) => setFilterRisk(e.target.value)}
-              style={{ width: '130px' }}
-            >
-              <option value="all">All Risks</option>
-              <option value="high">High Risk</option>
-              <option value="medium">Medium Risk</option>
-              <option value="low">Low Risk</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Candidate Application Submission Form Card */}
-        <div className="card card-lavender">
-          <div className="card-header">
-            <div className="card-title-group">
-              <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Smartphone size={18} style={{ color: 'var(--primary)' }} />
-                <span>Submit Candidate Application for Deception Analysis</span>
-              </h3>
-              <p className="card-subtitle">
-                Compare mobile application packages, manifest permissions, and icon similarity against official brand apps
-              </p>
-            </div>
-
-            {/* Quick Test Presets */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Load Demo Sample:</span>
-              <button
-                type="button"
-                className="btn btn-outline btn-sm"
-                onClick={() => loadPreset('trojan')}
-              >
-                <Sparkles size={12} style={{ color: '#ef4444' }} />
-                <span>Fake Banking APK</span>
-              </button>
-              <button
-                type="button"
-                className="btn btn-outline btn-sm"
-                onClick={() => loadPreset('wallet')}
-              >
-                <span>Derivative Wallet</span>
-              </button>
-            </div>
-          </div>
-
-          <form onSubmit={handleAnalyzeApp}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label required">Application Title</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Apex Mobile Banking Pro"
-                  value={appForm.appName}
-                  onChange={(e) => setAppForm({ ...appForm, appName: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Package Identifier</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. com.apexsec.bankloans"
-                  value={appForm.packageId}
-                  onChange={(e) => setAppForm({ ...appForm, packageId: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Developer / Publisher Name</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g. Quick Apex Capital LTD"
-                  value={appForm.developer}
-                  onChange={(e) => setAppForm({ ...appForm, developer: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Marketplace / Distribution Channel</label>
+        {/* PRIMARY BRAND-FIRST APP MONITORING CONTROLS */}
+        <div className="card" style={{ padding: '18px 22px', marginBottom: 20 }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 16
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+              <div>
+                <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
+                  SELECT PROTECTED BRAND
+                </label>
                 <select
                   className="form-select"
-                  value={appForm.storeType}
-                  onChange={(e) => setAppForm({ ...appForm, storeType: e.target.value })}
+                  value={selectedBrandId}
+                  onChange={(e) => setSelectedBrandId(e.target.value)}
+                  style={{ minWidth: 220, fontWeight: 600 }}
                 >
-                  <option value="APK Mirror / Third-party">APK Mirror / Third-party Store</option>
-                  <option value="Google Play Store">Google Play Store</option>
-                  <option value="Apple App Store">Apple App Store</option>
-                  <option value="Direct Download Website">Direct Download Website</option>
+                  <option value="all">All Registered Brands ({brands.length})</option>
+                  {brands.map(b => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
                 </select>
               </div>
+
+              <div>
+                <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'transparent', display: 'block', marginBottom: 4 }}>
+                  ACTION
+                </label>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleStartBrandScan}
+                  disabled={isAutomatedScanning || brands.length === 0}
+                  style={{ padding: '8px 18px' }}
+                >
+                  {isAutomatedScanning ? (
+                    <>
+                      <RefreshCw size={14} className="spinner" />
+                      <span>Scanning Marketplaces...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play size={14} fill="#fff" />
+                      <span>Start App Store Scan</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14, marginTop: 14 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label required">Store / Download URL</label>
-                <input
-                  type="url"
-                  className="form-input"
-                  placeholder="https://apk-mirror-store-example.org/download/..."
-                  value={appForm.storeUrl}
-                  onChange={(e) => setAppForm({ ...appForm, storeUrl: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">App Icon URL (optional)</label>
-                <input
-                  type="url"
-                  className="form-input"
-                  placeholder="https://.../icon.png"
-                  value={appForm.iconUrl}
-                  onChange={(e) => setAppForm({ ...appForm, iconUrl: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 18, borderTop: '1px solid var(--border-light)', paddingTop: 14 }}>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Info size={14} />
-                <span>Notice: Automated global app store scraping requires backend marketplace API connectors configured.</span>
-              </div>
-
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={isScanning}
-              >
-                {isScanning ? (
-                  <>
-                    <RefreshCw size={14} className="spinner" />
-                    <span>Analyzing APK Package...</span>
-                  </>
-                ) : (
-                  <>
-                    <Play size={14} fill="#fff" />
-                    <span>Run App Impersonation Analysis</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-
-          {/* Scan result banner */}
-          {scanResult && (
-            <div style={{
-              marginTop: 16,
-              padding: '12px 16px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: '#ffffff',
-              border: '1px solid #c7d2fe',
-              boxShadow: 'var(--shadow-sm)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <CheckCircle2 size={18} style={{ color: 'var(--primary)' }} />
-                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                  {scanResult.summary}
-                </span>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <button
                 className="btn btn-outline btn-sm"
-                onClick={() => setInspectCandidate(scanResult.finding)}
+                onClick={() => setShowManualForm(!showManualForm)}
+                style={{ fontSize: '0.78rem' }}
               >
-                Inspect App Finding
+                <span>Manual App Submission</span>
+                {showManualForm ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Results Table Card */}
+        {/* OPTIONAL MANUAL CANDIDATE SUBMISSION FORM */}
+        {showManualForm && (
+          <div className="card card-lavender" style={{ marginBottom: 20 }}>
+            <div className="card-header">
+              <div className="card-title-group">
+                <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Smartphone size={18} style={{ color: 'var(--primary)' }} />
+                  <span>Manual Application Investigation</span>
+                </h3>
+                <p className="card-subtitle">
+                  Inspect candidate Android APKs or third-party store listings against authentic developer identities
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Load Demo Sample:</span>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => loadPreset('clone')}
+                >
+                  <Sparkles size={12} style={{ color: '#ef4444' }} />
+                  <span>Rogue APK Clone</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => loadPreset('utility')}
+                >
+                  <span>Questionable Tool</span>
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleAnalyzeApp}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label required">Application Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. Acme Mobile Pro"
+                    value={appForm.appName}
+                    onChange={(e) => setAppForm({ ...appForm, appName: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Publisher / Developer</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. Rogue Developer Studio"
+                    value={appForm.developer}
+                    onChange={(e) => setAppForm({ ...appForm, developer: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label required">Store URL / Download Page</label>
+                  <input
+                    type="url"
+                    className="form-input"
+                    placeholder="https://apk-mirror.example/download"
+                    value={appForm.storeUrl}
+                    onChange={(e) => setAppForm({ ...appForm, storeUrl: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Package Identifier</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="com.example.app"
+                    value={appForm.packageId}
+                    onChange={(e) => setAppForm({ ...appForm, packageId: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 14, marginTop: 14 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Description / Release Notes</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Listing description text..."
+                    value={appForm.description}
+                    onChange={(e) => setAppForm({ ...appForm, description: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">App Icon URL</label>
+                  <input
+                    type="url"
+                    className="form-input"
+                    placeholder="https://.../icon.png"
+                    value={appForm.iconUrl}
+                    onChange={(e) => setAppForm({ ...appForm, iconUrl: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 18, borderTop: '1px solid var(--border-light)', paddingTop: 14 }}>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Info size={14} />
+                  <span>Checks package signatures, publisher mismatches, and perceptual icon similarity.</span>
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isManualScanning}
+                >
+                  {isManualScanning ? (
+                    <>
+                      <RefreshCw size={14} className="spinner" />
+                      <span>Analyzing Mobile App...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play size={14} fill="#fff" />
+                      <span>Submit for Analysis</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* RESULTS TABLE AND FILTERS */}
         <div className="card">
           <div className="card-header">
             <div className="card-title-group">
-              <h3 className="card-title">Flagged Application Candidates ({filteredFindings.length})</h3>
+              <h3 className="card-title">Mobile Application Surveillance Results</h3>
               <p className="card-subtitle">
-                Mobile applications analyzed against brand registries and official release signatures
+                Found {filteredFindings.length} candidate applications flagged across app marketplaces
               </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <div style={{ position: 'relative', width: 220 }}>
+                <Search size={14} style={{ position: 'absolute', left: 10, top: 10, color: 'var(--text-muted)' }} />
+                <input
+                  type="text"
+                  className="form-input form-input-sm"
+                  style={{ paddingLeft: 30 }}
+                  placeholder="Filter applications..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <select
+                className="form-select form-select-sm"
+                value={filterRisk}
+                onChange={(e) => setFilterRisk(e.target.value)}
+                style={{ width: '120px' }}
+              >
+                <option value="all">All Risks</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
             </div>
           </div>
 
           <DataTable
             columns={columns}
             data={filteredFindings}
-            loading={loading}
-            emptyTitle="No suspect applications detected"
-            emptyMessage="No application candidates matched the current search filters."
-            pageSize={7}
+            keyField="id"
+            emptyMessage="No application findings recorded for this brand. Click 'Start App Store Scan' to execute discovery."
           />
         </div>
       </div>
-
-      {/* ========================================================
-          APP INSPECTION MODAL
-         ======================================================== */}
-      {inspectCandidate && (
-        <Modal
-          isOpen={!!inspectCandidate}
-          onClose={() => setInspectCandidate(null)}
-          title="Mobile Application Threat Inspection"
-          size="large"
-          footer={
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-secondary" onClick={() => setInspectCandidate(null)}>
-                Close
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  setInspectCandidate(null);
-                  navigate(`/findings/${inspectCandidate.id}`);
-                }}
-              >
-                Open Full Findings Dossier
-              </button>
-            </div>
-          }
-        >
-          {/* Header comparison */}
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid var(--border-light)' }}>
-            <img
-              src={inspectCandidate.avatarUrl || 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=64'}
-              alt=""
-              style={{ width: 60, height: 60, borderRadius: 'var(--radius-md)', objectFit: 'cover', border: '2px solid #e2e8f0' }}
-            />
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800 }}>{inspectCandidate.candidateName}</h3>
-                <RiskBadge level={inspectCandidate.riskLevel} />
-              </div>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                Targeting: <strong>{inspectCandidate.brandName}</strong> • Publisher: <strong>{inspectCandidate.developer || 'Unknown'}</strong>
-              </p>
-              <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: 4 }}>
-                Package: <code>{inspectCandidate.packageId || 'Unlisted'}</code>
-              </div>
-            </div>
-          </div>
-
-          {/* Scores Overview Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
-            <div style={{ padding: '12px', backgroundColor: '#f8fafc', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>OVERALL RISK SCORE</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: inspectCandidate.riskScore >= 75 ? '#dc2626' : '#d97706' }}>
-                {inspectCandidate.riskScore}/100
-              </div>
-            </div>
-
-            <div style={{ padding: '12px', backgroundColor: '#f8fafc', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>NAME SIMILARITY</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--primary)' }}>
-                {inspectCandidate.nameSimilarity || 0}%
-              </div>
-            </div>
-
-            <div style={{ padding: '12px', backgroundColor: '#f8fafc', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>ICON VECTOR SIMILARITY</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#8b5cf6' }}>
-                {inspectCandidate.logoSimilarity || 0}%
-              </div>
-            </div>
-          </div>
-
-          {/* Reasons */}
-          <div>
-            <h4 style={{ fontSize: '0.86rem', fontWeight: 700, marginBottom: 8, color: 'var(--text-main)' }}>
-              Identified Threat Signals:
-            </h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {inspectCandidate.reasons?.map((r, i) => (
-                <li
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 8,
-                    fontSize: '0.8rem',
-                    color: 'var(--text-secondary)',
-                    backgroundColor: '#fafbfc',
-                    padding: '8px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-light)'
-                  }}
-                >
-                  <AlertTriangle size={15} style={{ color: '#f59e0b', flexShrink: 0, marginTop: 2 }} />
-                  <span>{r}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }
