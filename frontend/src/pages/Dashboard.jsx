@@ -1,0 +1,571 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  ShieldCheck,
+  Share2,
+  Smartphone,
+  AlertTriangle,
+  ArrowRight,
+  RefreshCw,
+  ExternalLink,
+  CheckCircle2,
+  Clock,
+  Server
+} from 'lucide-react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
+import StatCard from '../components/StatCard';
+import RiskBadge from '../components/RiskBadge';
+import LoadingState from '../components/LoadingState';
+import ErrorState from '../components/ErrorState';
+import DemoBanner from '../components/DemoBanner';
+import api from '../services/api';
+import { formatNumber, formatDate, formatRelativeTime } from '../utils/formatters';
+
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [statsData, setStatsData] = useState(null);
+  const [isDemo, setIsDemo] = useState(false);
+  const [lastScanTime, setLastScanTime] = useState(null);
+  const [backendHealth, setBackendHealth] = useState(null);
+
+  const loadDashboardData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [statsRes, healthRes] = await Promise.all([
+        api.getDashboardStats(),
+        api.checkHealth()
+      ]);
+
+      setStatsData(statsRes.data);
+      setIsDemo(statsRes.isDemoData || !healthRes.connected);
+      setBackendHealth(healthRes);
+
+      if (statsRes.data?.recentScans?.length > 0) {
+        setLastScanTime(statsRes.data.recentScans[0].timestamp);
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  if (loading) {
+    return <LoadingState message="Loading SOC 360 Risk Intelligence..." />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} onRetry={loadDashboardData} />;
+  }
+
+  // Threat activity timeline data
+  const threatTimeline = [
+    { name: 'Mon', high: 3, medium: 2, low: 1 },
+    { name: 'Tue', high: 4, medium: 3, low: 2 },
+    { name: 'Wed', high: 2, medium: 4, low: 1 },
+    { name: 'Thu', high: 5, medium: 3, low: 4 },
+    { name: 'Fri', high: 6, medium: 5, low: 2 },
+    { name: 'Sat', high: 4, medium: 2, low: 3 },
+    { name: 'Sun', high: statsData?.riskCounts?.High || 5, medium: statsData?.riskCounts?.Medium || 2, low: statsData?.riskCounts?.Low || 1 },
+  ];
+
+  // Risk Distribution Donut Data
+  const riskDonutData = [
+    { name: 'High Risk', value: statsData?.riskCounts?.High || 4, color: '#ef4444' },
+    { name: 'Medium Risk', value: statsData?.riskCounts?.Medium || 2, color: '#f59e0b' },
+    { name: 'Low Risk', value: statsData?.riskCounts?.Low || 1, color: '#10b981' },
+  ];
+
+  const totalRiskCount = riskDonutData.reduce((acc, curr) => acc + curr.value, 0);
+
+  // Threat Sources Data
+  const sourceBreakdown = [
+    { name: 'Social Media Profiles', count: statsData?.sourceCounts?.social || 5, percent: 65, color: '#6366f1' },
+    { name: 'Mobile Applications (APKs)', count: statsData?.sourceCounts?.apps || 2, percent: 35, color: '#8b5cf6' },
+  ];
+
+  return (
+    <div>
+      <DemoBanner isDemo={isDemo} />
+
+      <div className="page-content">
+        {/* ROW 1: 4 STATISTIC CARDS */}
+        <section className="stat-cards-grid" aria-label="Key Performance Statistics">
+          <StatCard
+            icon={ShieldCheck}
+            iconColor="indigo"
+            label="Brands Monitored"
+            value={formatNumber(statsData?.totalBrands || 4)}
+            subtext="Active corporate entities under surveillance"
+            trend={{ value: '+1 new', type: 'positive' }}
+            onClick={() => navigate('/brands')}
+          />
+
+          <StatCard
+            icon={Share2}
+            iconColor="purple"
+            label="Social Profiles Scanned"
+            value={formatNumber(statsData?.socialScanned || 1284)}
+            subtext="Targeting handle impersonation & typosquats"
+            trend={{ value: '+14% vol', type: 'positive' }}
+            onClick={() => navigate('/social-monitoring')}
+          />
+
+          <StatCard
+            icon={Smartphone}
+            iconColor="cyan"
+            label="Applications Scanned"
+            value={formatNumber(statsData?.appsScanned || 422)}
+            subtext="Analyzing package signatures & store clones"
+            trend={{ value: '+8% vol', type: 'positive' }}
+            onClick={() => navigate('/app-monitoring')}
+          />
+
+          <StatCard
+            icon={AlertTriangle}
+            iconColor="rose"
+            label="Suspicious Findings"
+            value={formatNumber(statsData?.suspiciousFindings || 7)}
+            subtext="Candidate profiles requiring analyst review"
+            trend={{ value: 'Requires Action', type: 'warning' }}
+            onClick={() => navigate('/findings')}
+          />
+        </section>
+
+        {/* TWO-COLUMN DASHBOARD LAYOUT */}
+        <div className="dashboard-columns">
+          {/* ========================================================
+              LEFT COLUMN
+             ======================================================== */}
+          <div className="col-left">
+            {/* A. Threat Activity Chart */}
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title-group">
+                  <h3 className="card-title">Threat Activity Timeline</h3>
+                  <p className="card-subtitle">Weekly distribution of detected impersonation signals by severity</p>
+                </div>
+                <div style={{ display: 'flex', gap: 12, fontSize: '0.74rem', alignItems: 'center' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#ef4444' }} /> High
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#f59e0b' }} /> Medium
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#10b981' }} /> Low
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ width: '100%', height: 260 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={threatTimeline} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorHigh" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0.0} />
+                      </linearGradient>
+                      <linearGradient id="colorMedium" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
+                      </linearGradient>
+                      <linearGradient id="colorLow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '10px',
+                        fontSize: '0.78rem',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.06)'
+                      }}
+                    />
+                    <Area type="monotone" dataKey="high" stroke="#ef4444" strokeWidth={2} fillOpacity={1} fill="url(#colorHigh)" name="High Risk" />
+                    <Area type="monotone" dataKey="medium" stroke="#f59e0b" strokeWidth={2} fillOpacity={1} fill="url(#colorMedium)" name="Medium Risk" />
+                    <Area type="monotone" dataKey="low" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorLow)" name="Low Risk" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* B. Recent Findings Table */}
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title-group">
+                  <h3 className="card-title">Recent Impersonation Findings</h3>
+                  <p className="card-subtitle">Highest severity candidates flagged by similarity heuristics</p>
+                </div>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={() => navigate('/findings')}
+                >
+                  <span>View All Findings</span>
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+
+              <div className="table-responsive">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Candidate</th>
+                      <th>Source Type</th>
+                      <th>Risk Score</th>
+                      <th>Risk Level</th>
+                      <th>Detected</th>
+                      <th style={{ textAlign: 'right' }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {statsData?.recentFindings?.map((finding) => (
+                      <tr key={finding.id}>
+                        <td>
+                          <div className="candidate-cell">
+                            <img
+                              src={finding.avatarUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=64'}
+                              alt=""
+                              className={`candidate-avatar ${finding.sourceType === 'app' ? 'square' : ''}`}
+                            />
+                            <div className="candidate-info">
+                              <h4>{finding.candidateName}</h4>
+                              <p>{finding.candidateHandle || finding.packageId}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`source-badge ${finding.sourceType}`}>
+                            {finding.sourceType === 'social' ? 'Social Profile' : 'Mobile App'}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.88rem' }}>
+                            {finding.riskScore}/100
+                          </span>
+                        </td>
+                        <td>
+                          <RiskBadge level={finding.riskLevel} />
+                        </td>
+                        <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                          {formatRelativeTime(finding.detectionDate)}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <button
+                            className="btn btn-outline btn-sm"
+                            onClick={() => navigate(`/findings/${finding.id}`)}
+                            title="Inspect Finding Evidence"
+                          >
+                            <span>Inspect</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* C. Scan Activity */}
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title-group">
+                  <h3 className="card-title">Recent Scan Activity</h3>
+                  <p className="card-subtitle">Automated and on-demand brand surface scan executions</p>
+                </div>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={loadDashboardData}
+                  title="Refresh Scan Status"
+                >
+                  <RefreshCw size={13} />
+                  <span>Refresh</span>
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {statsData?.recentScans?.map((scan) => (
+                  <div
+                    key={scan.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '12px 16px',
+                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: '#f8fafc',
+                      border: '1px solid var(--border-light)',
+                      flexWrap: 'wrap',
+                      gap: 10
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: '50%',
+                        backgroundColor: '#eef2ff',
+                        color: 'var(--primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <CheckCircle2 size={16} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                          {scan.brandName} — {scan.type}
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                          Target channels: {scan.target} • Duration: {scan.duration}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{ textAlign: 'right', fontSize: '0.74rem' }}>
+                        <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{scan.findingsGenerated} findings</span>
+                        <div style={{ color: 'var(--text-muted)' }}>{formatRelativeTime(scan.timestamp)}</div>
+                      </div>
+                      <span className="risk-badge low" style={{ fontSize: '0.7rem' }}>
+                        {scan.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ========================================================
+              RIGHT COLUMN
+             ======================================================== */}
+          <div className="col-right">
+            {/* A. Risk Distribution Donut Chart */}
+            <div className="card card-lavender">
+              <div className="card-header">
+                <div className="card-title-group">
+                  <h3 className="card-title">Risk Severity Distribution</h3>
+                  <p className="card-subtitle">Aggregate breakdown of current open findings</p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+                <div style={{ width: '100%', height: 210 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={riskDonutData}
+                        innerRadius={65}
+                        outerRadius={90}
+                        paddingAngle={4}
+                        dataKey="value"
+                      >
+                        {riskDonutData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          fontSize: '0.76rem'
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Center text in Donut */}
+                <div style={{
+                  position: 'absolute',
+                  top: '90px',
+                  textAlign: 'center',
+                  pointerEvents: 'none'
+                }}>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1 }}>
+                    {totalRiskCount}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
+                    Total Flagged
+                  </div>
+                </div>
+
+                {/* Donut Legend */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: 16,
+                  marginTop: 12,
+                  width: '100%',
+                  borderTop: '1px solid var(--border-light)',
+                  paddingTop: 12
+                }}>
+                  {riskDonutData.map(item => (
+                    <div key={item.name} style={{ textAlign: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: item.color }} />
+                        <span>{item.name}</span>
+                      </div>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                        {item.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* B. Threat Sources */}
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title-group">
+                  <h3 className="card-title">Threat Sources Breakdown</h3>
+                  <p className="card-subtitle">Candidate findings origin across monitored vectors</p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {sourceBreakdown.map((src) => (
+                  <div key={src.name}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: 6 }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{src.name}</span>
+                      <span style={{ fontWeight: 700, color: src.color }}>{src.count} findings ({src.percent}%)</span>
+                    </div>
+                    <div style={{
+                      width: '100%',
+                      height: 8,
+                      backgroundColor: '#f1f5f9',
+                      borderRadius: 999,
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${src.percent}%`,
+                        height: '100%',
+                        backgroundColor: src.color,
+                        borderRadius: 999
+                      }} />
+                    </div>
+                  </div>
+                ))}
+
+                <div style={{
+                  marginTop: 8,
+                  padding: '12px',
+                  backgroundColor: '#f8fafc',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--border-light)',
+                  fontSize: '0.74rem',
+                  color: 'var(--text-muted)',
+                  lineHeight: 1.4
+                }}>
+                  <strong style={{ color: 'var(--text-secondary)' }}>Note on External Sources:</strong> Domain registrations and dark-web channels appear once integrated with backend connectors.
+                </div>
+              </div>
+            </div>
+
+            {/* C. Monitoring Status */}
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title-group">
+                  <h3 className="card-title">Monitoring Engine Status</h3>
+                  <p className="card-subtitle">API health & detection pipeline status</p>
+                </div>
+                <div style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  backgroundColor: backendHealth?.connected ? '#10b981' : '#f59e0b'
+                }} />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '10px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: '#f8fafc',
+                  fontSize: '0.78rem'
+                }}>
+                  <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Server size={14} /> Backend Connector
+                  </span>
+                  <span style={{ fontWeight: 700, color: backendHealth?.connected ? '#047857' : '#b45309' }}>
+                    {backendHealth?.connected ? 'FastAPI Connected' : 'Demo Adapter Active'}
+                  </span>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '10px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: '#f8fafc',
+                  fontSize: '0.78rem'
+                }}>
+                  <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Clock size={14} /> Last Scan Completed
+                  </span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                    {formatRelativeTime(lastScanTime)}
+                  </span>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '10px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: '#f8fafc',
+                  fontSize: '0.78rem'
+                }}>
+                  <span style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <ShieldCheck size={14} /> Monitored Brands
+                  </span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                    {statsData?.totalBrands || 4} Active Targets
+                  </span>
+                </div>
+
+                <div style={{ marginTop: 4 }}>
+                  <button
+                    className="btn btn-outline btn-sm"
+                    style={{ width: '100%' }}
+                    onClick={() => navigate('/settings')}
+                  >
+                    Configure API & Connectors
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
