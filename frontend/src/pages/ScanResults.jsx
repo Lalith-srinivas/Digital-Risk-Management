@@ -1027,14 +1027,14 @@ export default function ScanResults() {
           </div>
         ) : (
           <div className="table-responsive">
-            <table className="data-table" style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+            <table className="data-table" style={{ width: '100%', minWidth: '920px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: '700', fontSize: '12px', textTransform: 'uppercase' }}>
-                  <th style={{ padding: '12px 18px' }}>Candidate Identity</th>
-                  <th style={{ padding: '12px 18px' }}>Vector</th>
-                  <th style={{ padding: '12px 18px' }}>Review Priority</th>
-                  <th style={{ padding: '12px 18px' }}>Evidence Summary</th>
-                  <th style={{ padding: '12px 18px', textAlign: 'right' }}>Actions</th>
+                  <th style={{ padding: '14px 18px', width: '24%', minWidth: '210px' }}>Candidate Identity</th>
+                  <th style={{ padding: '14px 18px', width: '15%', minWidth: '130px', whiteSpace: 'nowrap' }}>Vector</th>
+                  <th style={{ padding: '14px 18px', width: '16%', minWidth: '140px', whiteSpace: 'nowrap' }}>Review Priority</th>
+                  <th className="cell-wrap" style={{ padding: '14px 18px', width: '33%', minWidth: '280px', whiteSpace: 'normal' }}>Evidence Summary</th>
+                  <th style={{ padding: '14px 18px', width: '12%', minWidth: '110px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -1060,32 +1060,32 @@ export default function ScanResults() {
                       onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
                       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <td style={{ padding: '14px 18px' }}>
+                      <td style={{ padding: '14px 18px', verticalAlign: 'middle' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <img
                             src={cAvatar}
                             alt=""
-                            style={{ width: '36px', height: '36px', borderRadius: isSocial ? '50%' : '8px', objectFit: 'cover', border: '1px solid #e2e8f0' }}
+                            style={{ width: '36px', height: '36px', borderRadius: isSocial ? '50%' : '8px', objectFit: 'cover', border: '1px solid #e2e8f0', flexShrink: 0 }}
                           />
-                          <div>
-                            <div style={{ fontWeight: '700', color: '#0f172a' }}>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: '700', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {cName}
                             </div>
-                            <div style={{ fontSize: '12px', color: '#64748b' }}>
+                            <div style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {cHandle}
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      <td style={{ padding: '14px 18px' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '3px 8px', borderRadius: '4px', background: '#f1f5f9', fontSize: '12px', fontWeight: '600', color: '#475569' }}>
+                      <td style={{ padding: '14px 18px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '4px', background: '#f1f5f9', fontSize: '12px', fontWeight: '600', color: '#475569' }}>
                           {isSocial ? <Share2 size={13} color="#4f46e5" /> : <Smartphone size={13} color="#059669" />}
                           {cPlatform}
                         </div>
                       </td>
 
-                      <td style={{ padding: '14px 18px' }}>
+                      <td style={{ padding: '14px 18px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <RiskBadge level={rLevel} score={rScore} />
                           <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>
@@ -1094,18 +1094,43 @@ export default function ScanResults() {
                         </div>
                       </td>
 
-                      <td style={{ padding: '14px 18px', maxWidth: '320px' }}>
-                        <div style={{ fontSize: '12px', color: '#334155', lineHeight: '1.4' }}>
+                      <td
+                        className="cell-wrap"
+                        style={{
+                          padding: '14px 18px',
+                          verticalAlign: 'middle',
+                          whiteSpace: 'normal',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                          minWidth: '280px',
+                          maxWidth: '460px',
+                        }}
+                      >
+                        <div style={{
+                          fontSize: '12.5px',
+                          color: '#334155',
+                          lineHeight: '1.5',
+                          whiteSpace: 'normal',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                        }}>
                           {cEvidence}
                         </div>
                         {f.evidence?.name_similarity !== undefined && (
-                          <div style={{ fontSize: '11px', color: '#6366f1', marginTop: '2px', fontWeight: '600' }}>
+                          <div style={{ fontSize: '11px', color: '#6366f1', marginTop: '4px', fontWeight: '600', whiteSpace: 'nowrap' }}>
                             Lexical match: {Math.round(f.evidence.name_similarity)}%
                           </div>
                         )}
                       </td>
 
-                      <td style={{ padding: '14px 18px', textAlign: 'right' }}>
+                      <td style={{
+                        padding: '14px 18px',
+                        textAlign: 'right',
+                        verticalAlign: 'middle',
+                        whiteSpace: 'nowrap',
+                        width: '110px',
+                        minWidth: '110px',
+                      }}>
                         {cUrl ? (
                           <a
                             href={cUrl}
@@ -1114,8 +1139,8 @@ export default function ScanResults() {
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '4px',
-                              padding: '6px 12px',
+                              gap: '5px',
+                              padding: '6px 14px',
                               fontSize: '12px',
                               fontWeight: '600',
                               color: '#4f46e5',
@@ -1123,6 +1148,8 @@ export default function ScanResults() {
                               border: '1px solid #ddd6fe',
                               borderRadius: '6px',
                               textDecoration: 'none',
+                              whiteSpace: 'nowrap',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
                             }}
                           >
                             Inspect <ExternalLink size={12} />

@@ -1070,6 +1070,14 @@
   white-space: nowrap;
 }
 
+.data-table th.cell-wrap,
+.data-table td.cell-wrap,
+.data-table .cell-wrap {
+  white-space: normal !important;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
 .data-table th {
   padding: 12px 14px;
   font-size: 0.74rem;
