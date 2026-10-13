@@ -16,6 +16,10 @@ import {
   UserPlus,
   RefreshCw,
   Sparkles,
+  ShieldCheck,
+  Info,
+  Database,
+  Radio,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -30,17 +34,25 @@ export default function ScanResults() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRisk, setSelectedRisk] = useState('ALL');
   const [guestModeDismissed, setGuestModeDismissed] = useState(false);
+  const [connectorsStatus, setConnectorsStatus] = useState(null);
 
-  // If no in-memory results exist, provide an empty or redirect state
+  // If no in-memory results exist, provide clean empty initial state
   const scanData = guestScanResults || {
-    brand_name: 'Target Enterprise Brand',
-    candidates_analyzed: 8,
-    findings_generated: 4,
-    social_analyzed: 5,
-    apps_analyzed: 3,
-    sources_checked: ['Twitter/X', 'Telegram', 'Instagram', 'Google Play Store', 'Apple App Store'],
+    brand_name: 'Target Brand',
+    candidates_analyzed: 0,
+    findings_generated: 0,
+    social_analyzed: 0,
+    apps_analyzed: 0,
+    sources_checked: ['Apple App Store', 'GitHub Public'],
+    sources_status: {
+      apple_app_store: { status: 'active', name: 'Apple App Store (iTunes API)' },
+      github: { status: 'active', name: 'GitHub Public Search' },
+      twitter: { status: 'unconfigured', name: 'Twitter/X API v2' },
+      google_play: { status: 'unconfigured', name: 'Google Play Store' },
+      telegram: { status: 'unconfigured', name: 'Telegram Bot API' },
+    },
     findings: [],
-    is_demo: true,
+    is_demo: false,
     is_guest: true,
   };
 
@@ -56,6 +68,11 @@ export default function ScanResults() {
         }
       }).catch((e) => console.warn('Could not sync live brand findings:', e));
     }
+
+    // Load connectors status for honest display
+    api.getConnectorsStatus().then((res) => {
+      if (res.data) setConnectorsStatus(res.data);
+    }).catch((e) => console.warn('Could not load connectors status:', e));
   }, [scanData.brand_id, scanData.brandId]);
 
   const findings = liveFindings || scanData.findings || [];
@@ -197,6 +214,146 @@ export default function ScanResults() {
         </div>
       )}
 
+      {/* Honest Error / Service Unavailable Notice */}
+      {(scanData.error || scanData.status === 'error') && (
+        <div style={{
+          background: '#fef2f2',
+          border: '1px solid #fecaca',
+          borderRadius: '12px',
+          padding: '18px 22px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '14px',
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#991b1b', fontWeight: '800', fontSize: '15px' }}>
+              <AlertTriangle size={18} color="#dc2626" />
+              Live Scanning Unavailable
+            </div>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#b91c1c', maxWidth: '640px', lineHeight: '1.4' }}>
+              {scanData.scan_message || 'Unable to connect with the backend surveillance engine. An honest error is displayed — zero threats are never assumed on connector failure.'}
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/scan')}
+            style={{
+              padding: '8px 16px',
+              fontSize: '12px',
+              fontWeight: '700',
+              color: '#ffffff',
+              background: '#dc2626',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+            }}
+          >
+            Launch Demo Simulation
+          </button>
+        </div>
+      )}
+
+      {/* Brand Verification Status Banner */}
+      {scanData.brand_verification && (
+        <div style={{
+          background: scanData.brand_verification.verified ? '#f0fdf4' : '#fffbeb',
+          border: `1px solid ${scanData.brand_verification.verified ? '#bbf7d0' : '#fde68a'}`,
+          borderRadius: '10px',
+          padding: '12px 18px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {scanData.brand_verification.verified ? (
+              <ShieldCheck size={20} color="#16a34a" />
+            ) : (
+              <Info size={20} color="#d97706" />
+            )}
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '800', color: scanData.brand_verification.verified ? '#166534' : '#92400e' }}>
+                {scanData.brand_verification.verified
+                  ? `Brand Identity Verified: ${scanData.brand_verification.domain || scanData.brand_name}`
+                  : `Unverified Brand Identity: "${scanData.brand_name}"`}
+              </div>
+              <div style={{ fontSize: '12px', color: scanData.brand_verification.verified ? '#15803d' : '#b45309', marginTop: '2px' }}>
+                {scanData.brand_verification.details || (scanData.brand_verification.verified ? 'Official authoritative domain validated via DNS.' : 'Could not confirm an authoritative DNS record or corporate domain.')}
+                {' '}• Confidence: <strong>{(scanData.brand_verification.confidence || 'none').toUpperCase()}</strong>
+              </div>
+            </div>
+          </div>
+          {!scanData.brand_verification.verified && (
+            <span style={{ fontSize: '11px', fontWeight: '700', color: '#92400e', background: '#fef3c7', padding: '3px 8px', borderRadius: '6px' }}>
+              UNVERIFIED IDENTIFIER
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Data Source Connectors Status Bar */}
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '10px',
+        padding: '12px 18px',
+        marginBottom: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px',
+        fontSize: '12px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#475569', fontWeight: '700' }}>
+          <Database size={14} color="#6366f1" />
+          <span>Surveillance Connectors:</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {Object.entries(scanData.sources_status || connectorsStatus || {
+            apple_app_store: { status: 'active', name: 'Apple App Store' },
+            github: { status: 'active', name: 'GitHub' },
+            twitter: { status: 'unconfigured', name: 'Twitter/X' },
+            google_play: { status: 'unconfigured', name: 'Google Play' },
+            telegram: { status: 'unconfigured', name: 'Telegram' },
+          }).map(([key, info]) => {
+            const isActive = info.status === 'active';
+            const isDemo = info.status === 'demo';
+            const label = info.name || key.replace(/_/g, ' ');
+            return (
+              <span
+                key={key}
+                title={info.message || (info.required_keys ? `Requires: ${(info.required_keys || []).join(', ')}` : '')}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '3px 8px',
+                  borderRadius: '9999px',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  background: isActive ? '#ecfdf5' : (isDemo ? '#fef3c7' : '#f1f5f9'),
+                  color: isActive ? '#065f46' : (isDemo ? '#92400e' : '#64748b'),
+                  border: `1px solid ${isActive ? '#a7f3d0' : (isDemo ? '#fde68a' : '#e2e8f0')}`,
+                }}
+              >
+                <span style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: isActive ? '#10b981' : (isDemo ? '#f59e0b' : '#94a3b8'),
+                }} />
+                {label}: {isActive ? 'Live' : (isDemo ? 'Demo' : 'Unconfigured')}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Top Header & Export Toolbar */}
       <div style={{
         background: '#ffffff',
@@ -215,7 +372,7 @@ export default function ScanResults() {
             <h1 style={{ fontSize: '26px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
               Scan Results: {scanData.brand_name}
             </h1>
-            {scanData.is_demo && (
+            {scanData.is_demo ? (
               <span style={{
                 background: '#fef3c7',
                 color: '#b45309',
@@ -227,10 +384,22 @@ export default function ScanResults() {
               }}>
                 SIMULATED CANDIDATES
               </span>
+            ) : (
+              <span style={{
+                background: '#ecfdf5',
+                color: '#065f46',
+                fontSize: '11px',
+                fontWeight: '700',
+                padding: '2px 8px',
+                borderRadius: '9999px',
+                border: '1px solid #a7f3d0',
+              }}>
+                LIVE SURVEILLANCE
+              </span>
             )}
           </div>
           <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0' }}>
-            Surveillance complete across social handles and application marketplaces.
+            {scanData.scan_message || 'Evidence-based discovery across active application stores and public platforms.'}
           </p>
         </div>
 
@@ -306,10 +475,10 @@ export default function ScanResults() {
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', textAlign: 'center' }}>
           <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Candidates Scanned</div>
           <div style={{ fontSize: '28px', fontWeight: '800', color: '#1e293b', marginTop: '4px' }}>
-            {scanData.candidates_analyzed || findings.length}
+            {scanData.candidates_analyzed !== undefined ? scanData.candidates_analyzed : findings.length}
           </div>
           <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-            {socialCount || scanData.social_analyzed || 5} social • {appCount || scanData.apps_analyzed || 3} apps
+            {(scanData.social_analyzed !== undefined ? scanData.social_analyzed : socialCount)} social • {(scanData.apps_analyzed !== undefined ? scanData.apps_analyzed : appCount)} apps
           </div>
         </div>
 
@@ -434,21 +603,42 @@ export default function ScanResults() {
               width: '48px',
               height: '48px',
               borderRadius: '24px',
-              background: '#f1f5f9',
-              color: '#64748b',
+              background: scanData.brand_verification?.verified ? '#ecfdf5' : '#f1f5f9',
+              color: scanData.brand_verification?.verified ? '#059669' : '#64748b',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 12px',
             }}>
-              <CheckCircle2 size={24} />
+              {scanData.brand_verification?.verified ? <CheckCircle2 size={24} /> : <Search size={24} />}
             </div>
             <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-              No Impersonation Candidates Found
+              {scanData.brand_verification?.verified
+                ? 'Brand Verified: No Threat Candidates Detected'
+                : 'No Candidates Discovered on Monitored Channels'}
             </h4>
-            <p style={{ fontSize: '13px', color: '#64748b', maxWidth: '420px', margin: '0 auto' }}>
-              No matches met the filter criteria across the configured discovery sources.
+            <p style={{ fontSize: '13px', color: '#64748b', maxWidth: '480px', margin: '0 auto 16px', lineHeight: '1.5' }}>
+              {scanData.brand_verification?.verified
+                ? 'No rogue applications or unauthorized profiles were identified across active surveillance channels for this verified corporate brand.'
+                : `No candidates matched "${scanData.brand_name}" across active connectors. (Note: Identifier could not be verified against authoritative records. This does not automatically certify the query is safe).`}
             </p>
+            {!scanData.is_demo && (
+              <button
+                onClick={() => navigate('/scan')}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  color: '#4f46e5',
+                  background: '#eef2ff',
+                  border: '1px solid #c7d2fe',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                }}
+              >
+                Try Demo Simulation Mode
+              </button>
+            )}
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>

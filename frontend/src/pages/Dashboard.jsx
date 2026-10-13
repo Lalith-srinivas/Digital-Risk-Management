@@ -15,7 +15,8 @@ import {
   Play,
   Building2,
   ShieldAlert,
-  Search
+  Search,
+  Database
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -45,6 +46,7 @@ export default function Dashboard() {
   const [isDemo, setIsDemo] = useState(false);
   const [lastScanTime, setLastScanTime] = useState(null);
   const [backendHealth, setBackendHealth] = useState(null);
+  const [connectorsStatus, setConnectorsStatus] = useState(null);
 
   // First-time onboarding state
   const [showAddBrandModal, setShowAddBrandModal] = useState(false);
@@ -64,14 +66,18 @@ export default function Dashboard() {
     setLoading(true);
     setError(null);
     try {
-      const [statsRes, healthRes] = await Promise.all([
+      const [statsRes, healthRes, connectorsRes] = await Promise.all([
         api.getDashboardStats(),
-        api.checkHealth()
+        api.checkHealth(),
+        api.getConnectorsStatus().catch(() => ({ data: null }))
       ]);
 
       setStatsData(statsRes.data);
       setIsDemo(statsRes.isDemoData || !healthRes.connected);
       setBackendHealth(healthRes);
+      if (connectorsRes?.data) {
+        setConnectorsStatus(connectorsRes.data);
+      }
 
       if (statsRes.data?.recentScans?.length > 0) {
         setLastScanTime(statsRes.data.recentScans[0].timestamp);
@@ -842,6 +848,52 @@ export default function Dashboard() {
                   <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>
                     {totalBrands} Active Targets
                   </span>
+                </div>
+
+                {/* External Data Connectors Status */}
+                <div style={{
+                  padding: '12px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: '#f8fafc',
+                  border: '1px solid var(--border-light)',
+                  marginTop: 2,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Database size={13} color="#6366f1" /> External Data Connectors
+                    </span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      Live Status
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.74rem' }}>
+                    {Object.entries(connectorsStatus || {
+                      apple_app_store: { name: 'Apple App Store', status: 'active' },
+                      github: { name: 'GitHub Public Search', status: 'active' },
+                      twitter: { name: 'Twitter/X API v2', status: 'unconfigured' },
+                      google_play: { name: 'Google Play Store', status: 'unconfigured' },
+                      telegram: { name: 'Telegram Bot API', status: 'unconfigured' },
+                    }).map(([key, info]) => {
+                      const isActive = info.status === 'active';
+                      return (
+                        <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>{info.name || key.replace(/_/g, ' ')}</span>
+                          <span style={{
+                            padding: '1px 6px',
+                            borderRadius: '9999px',
+                            fontSize: '0.68rem',
+                            fontWeight: 700,
+                            backgroundColor: isActive ? '#ecfdf5' : '#f1f5f9',
+                            color: isActive ? '#059669' : '#64748b',
+                            border: `1px solid ${isActive ? '#a7f3d0' : '#e2e8f0'}`,
+                          }}>
+                            {isActive ? 'Active' : 'Key Required'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div style={{ marginTop: 4 }}>

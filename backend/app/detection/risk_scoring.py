@@ -92,6 +92,7 @@ class RiskScorer:
         developer_signal: Optional[Dict[str, Any]] = None,
         official_url_signal: Optional[Dict[str, Any]] = None,
         has_suspicious_keywords: bool = False,
+        is_fan_page: bool = False,
     ) -> RiskAssessment:
         """Calculate holistic risk assessment across all evaluated signals."""
         available_evidence: List[str] = []
@@ -226,6 +227,13 @@ class RiskScorer:
         # Strictly clamp between 0.0 and 100.0
         total_score = round(max(0.0, min(100.0, raw_total)), 2)
 
+        # Safeguard: Independent community / fan pages without malicious indicators are strictly Low risk
+        if is_fan_page:
+            total_score = min(total_score, 25.0)
+            available_evidence.append(
+                "Identified as independent community or fan profile without hostile or phishing indicators"
+            )
+
         # 8. Determine Risk Category and Review Priority
         if total_score <= self.config.threshold_low_max:
             risk_level = "Low"
@@ -237,15 +245,17 @@ class RiskScorer:
         # Review priority:
         # Flag "Needs Review" when evidence is ambiguous or critical signals are missing
         review_priority = risk_level
-        is_ambiguous = (
-            # Moderate-to-high name similarity but logo or developer is missing
-            (name_sim_val >= 60.0 and ("logo" in " ".join(missing_evidence).lower()))
-            # Borderline score with missing data
-            or (25.0 <= total_score <= 45.0 and len(missing_evidence) >= 2)
-        )
-
-        if is_ambiguous and risk_level != "High":
-            review_priority = "Needs Review"
+        if is_fan_page:
+            review_priority = "Low"
+        else:
+            is_ambiguous = (
+                # Moderate-to-high name similarity but logo or developer is missing
+                (name_sim_val >= 60.0 and ("logo" in " ".join(missing_evidence).lower()))
+                # Borderline score with missing data
+                or (25.0 <= total_score <= 45.0 and len(missing_evidence) >= 2)
+            )
+            if is_ambiguous and risk_level != "High":
+                review_priority = "Needs Review"
 
         scores = SignalScores(
             name_score=round(name_pts, 2),

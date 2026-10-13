@@ -13,6 +13,8 @@ from app.detection_adapter import (
     DetectionInput,
     get_detection_engine,
 )
+from app.connectors import get_connector_manager
+from app.services.brand_validator import BrandValidator
 
 
 def utc_now() -> datetime:
@@ -24,148 +26,47 @@ def sanitize_slug(name: str) -> str:
     return slug or "brand"
 
 
-def discover_social_candidates(brand: Brand) -> List[SocialCandidateInput]:
+def discover_social_candidates(brand: Any, is_demo: bool = False) -> List[SocialCandidateInput]:
     """
-    Generate realistic candidate profiles for digital risk monitoring when automated
-    crawling / connectors are unconfigured or in demonstration mode.
+    Candidate discovery for social channels.
+    When is_demo is True, generates explicitly marked demonstration candidates.
+    When is_demo is False (normal scan), queries live data source connectors.
+    Never invents profiles in production live scanning.
     """
-    slug = sanitize_slug(brand.name)
-    candidates: List[SocialCandidateInput] = []
+    mgr = get_connector_manager()
+    brand_info = {
+        "official_social_urls": getattr(brand, "official_social_urls", []) or [],
+        "logo_url": getattr(brand, "logo_url", None),
+    }
 
-    # 1. High-risk Impersonator claiming official support
-    candidates.append(
-        SocialCandidateInput(
-            display_name=f"{brand.name} Support & Helpdesk",
-            username=f"@{slug}_support_desk",
-            profile_url=f"https://x.com/{slug}_support_desk",
-            platform="Twitter/X",
-            bio=f"Official verified support and recovery service for {brand.name}. DM us for urgent account assistance.",
-            image_url="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=96&auto=format&fit=crop&q=80",
-            is_demo=True,
-        )
-    )
+    if is_demo:
+        return mgr.generate_demo_social_candidates(brand.name, brand_info)
 
-    # 2. Telegram / Crypto / Giveaway scam
-    candidates.append(
-        SocialCandidateInput(
-            display_name=f"{brand.name} Bonus & Community Rewards",
-            username=f"@{slug}_rewards_bot",
-            profile_url=f"https://t.me/{slug}_rewards_bot",
-            platform="Telegram",
-            bio=f"Claim your exclusive {brand.name} verification reward and membership tokens now. Limited registration.",
-            image_url="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96&auto=format&fit=crop&q=80",
-            is_demo=True,
-        )
-    )
-
-    # 3. Typosquat / Homoglyph variant on Instagram
-    typo_slug = slug[:3] + "o" + slug[3:] if len(slug) > 3 else slug + "x"
-    candidates.append(
-        SocialCandidateInput(
-            display_name=f"{brand.name} Official Deals",
-            username=f"@{typo_slug}",
-            profile_url=f"https://instagram.com/{typo_slug}",
-            platform="Instagram",
-            bio=f"Unofficial portal sharing daily discounts, promo codes and updates for {brand.name} users.",
-            image_url="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=96&auto=format&fit=crop&q=80",
-            is_demo=True,
-        )
-    )
-
-    # 4. Benign Community Fan Group (lower risk priority)
-    candidates.append(
-        SocialCandidateInput(
-            display_name=f"{brand.name} Global Fans",
-            username=f"@{slug}_fans",
-            profile_url=f"https://x.com/{slug}_fans",
-            platform="Twitter/X",
-            bio=f"Independent fan community and discussion club for {brand.name}. Unofficial & community run.",
-            image_url="https://images.unsplash.com/photo-1541354329998-f4d9a9f9297f?w=96&auto=format&fit=crop&q=80",
-            is_demo=True,
-        )
-    )
-
-    # 5. Official / Authorized reference account (to demonstrate zero/low risk baseline)
-    official_url = (
-        brand.official_social_urls[0]
-        if (brand.official_social_urls and len(brand.official_social_urls) > 0)
-        else f"https://x.com/{slug}"
-    )
-    candidates.append(
-        SocialCandidateInput(
-            display_name=brand.name,
-            username=f"@{slug}",
-            profile_url=official_url,
-            platform="Twitter/X",
-            bio=f"The verified official account of {brand.name}.",
-            image_url=getattr(brand, "logo_url", None) or "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=96&auto=format&fit=crop&q=80",
-            is_demo=True,
-        )
-    )
-
-    return candidates
+    # Live connector discovery
+    live_candidates, _ = mgr.discover_live_social_candidates(brand.name, brand_info)
+    return live_candidates
 
 
-def discover_app_candidates(brand: Brand) -> List[AppCandidateInput]:
+def discover_app_candidates(brand: Any, is_demo: bool = False) -> List[AppCandidateInput]:
     """
-    Generate realistic candidate mobile applications across app stores and APK mirrors.
+    Candidate discovery for mobile application marketplaces.
+    When is_demo is True, generates explicitly marked demonstration applications.
+    When is_demo is False (normal scan), queries live data source connectors (e.g. Apple App Store).
+    Never invents mobile apps in production live scanning.
     """
-    slug = sanitize_slug(brand.name)
-    candidates: List[AppCandidateInput] = []
+    mgr = get_connector_manager()
+    brand_info = {
+        "official_developers": getattr(brand, "official_developers", []) or [],
+        "official_apps": getattr(brand, "official_apps", []) or [],
+        "logo_url": getattr(brand, "logo_url", None),
+    }
 
-    # 1. High-risk Rogue APK Mirror Mod
-    candidates.append(
-        AppCandidateInput(
-            app_name=f"{brand.name} Mobile Pro (Unlocked)",
-            package_identifier=f"com.unauthorized.{slug}.mod",
-            developer_name=f"{brand.name} Global Direct",
-            store_url=f"https://apk-mirrors.net/download/{slug}-pro-v2",
-            store_type="APK Mirror / Third-party",
-            description=f"Full premium edition of {brand.name} with unlocked capabilities and direct credentials gateway.",
-            icon_url="https://images.unsplash.com/photo-1563986768609-322da13575f3?w=96&auto=format&fit=crop&q=80",
-            is_demo=True,
-        )
-    )
+    if is_demo:
+        return mgr.generate_demo_app_candidates(brand.name, brand_info)
 
-    # 2. Suspicious Helper / Utility App
-    candidates.append(
-        AppCandidateInput(
-            app_name=f"{brand.name} Account Assistant & Tool",
-            package_identifier=f"org.tools.{slug}helper",
-            developer_name="FastUtility Global LLC",
-            store_url=f"https://thirdparty-market.com/apps/{slug}-tool",
-            store_type="Third-party Store",
-            description=f"Companion application for {brand.name} customers to organize settings, notifications and alerts.",
-            icon_url="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96&auto=format&fit=crop&q=80",
-            is_demo=True,
-        )
-    )
-
-    # 3. Baseline Official Application
-    official_dev = (
-        brand.official_developers[0]
-        if (brand.official_developers and len(brand.official_developers) > 0)
-        else f"{brand.name} Inc."
-    )
-    official_pkg = (
-        brand.official_apps[0]
-        if (brand.official_apps and len(brand.official_apps) > 0)
-        else f"com.{slug}.official"
-    )
-    candidates.append(
-        AppCandidateInput(
-            app_name=brand.name,
-            package_identifier=official_pkg,
-            developer_name=official_dev,
-            store_url=f"https://play.google.com/store/apps/details?id={official_pkg}",
-            store_type="Google Play Store",
-            description=f"The verified official mobile application from {brand.name}.",
-            icon_url=getattr(brand, "logo_url", None) or "https://images.unsplash.com/photo-1541354329998-f4d9a9f9297f?w=96&auto=format&fit=crop&q=80",
-            is_demo=True,
-        )
-    )
-
-    return candidates
+    # Live connector discovery
+    live_candidates, _ = mgr.discover_live_app_candidates(brand.name, brand_info)
+    return live_candidates
 
 
 class ScanService:
@@ -200,12 +101,16 @@ class ScanService:
         if not brand:
             raise ValueError(f"Brand with ID '{request.brand_id}' not found")
 
-        # Candidate discovery fallback if no candidates provided
-        candidate_items = request.candidates
-        if not candidate_items:
-            candidate_items = discover_social_candidates(brand)
+        is_demo_run = bool(request.is_demo)
 
-        is_demo_run = bool(request.is_demo or any(c.is_demo for c in candidate_items))
+        # Candidate discovery: only query connectors or use explicitly supplied candidates
+        candidate_items = request.candidates
+        if candidate_items is None:
+            candidate_items = discover_social_candidates(brand, is_demo=is_demo_run)
+
+        # Check if any candidate has demo flag
+        if any(c.is_demo for c in candidate_items):
+            is_demo_run = True
 
         # 1. Create Scan record in 'running' status
         scan = Scan(
@@ -251,7 +156,6 @@ class ScanService:
                     )
 
                 if cand:
-                    # Update existing candidate
                     cand.candidate_name = item.display_name
                     cand.username = item.username
                     cand.source_url = item.profile_url
@@ -365,12 +269,15 @@ class ScanService:
         if not brand:
             raise ValueError(f"Brand with ID '{request.brand_id}' not found")
 
-        # Candidate discovery fallback if no candidates provided
-        candidate_items = request.candidates
-        if not candidate_items:
-            candidate_items = discover_app_candidates(brand)
+        is_demo_run = bool(request.is_demo)
 
-        is_demo_run = bool(request.is_demo or any(c.is_demo for c in candidate_items))
+        # Candidate discovery: only query connectors or use explicitly supplied candidates
+        candidate_items = request.candidates
+        if candidate_items is None:
+            candidate_items = discover_app_candidates(brand, is_demo=is_demo_run)
+
+        if any(c.is_demo for c in candidate_items):
+            is_demo_run = True
 
         # 1. Create Scan record in 'running' status
         scan = Scan(
@@ -527,7 +434,7 @@ class ScanService:
     def execute_brand_scan(
         db: Session,
         brand_id: uuid.UUID,
-        is_demo: bool = True,
+        is_demo: bool = False,
     ) -> Dict[str, Any]:
         """
         Coordinated monitoring workflow for a brand:
@@ -561,7 +468,8 @@ class ScanService:
     def execute_guest_scan(request: Any) -> Dict[str, Any]:
         """
         Process a brand scan in-memory for guest users with ZERO database writes.
-        Returns complete threat analysis, similarity scores, and evidence directly to the client.
+        Executes real candidate discovery via working data-source connectors.
+        Never fabricates results unless explicit demo mode is requested.
         """
         from app.schemas.scan import GuestScanRequest
         if isinstance(request, dict):
@@ -601,13 +509,44 @@ class ScanService:
             aliases=req.aliases,
         )
 
+        # 1. Brand Identity Validation
+        brand_val = BrandValidator.validate_brand(
+            name=brand.name,
+            website=brand.website,
+            official_social_urls=brand.official_social_urls,
+            official_apps=brand.official_apps,
+        )
+
         detector = get_detection_engine()
-        social_items = discover_social_candidates(brand)
-        app_items = discover_app_candidates(brand)
+        connector_mgr = get_connector_manager()
+        brand_info = {
+            "official_social_urls": brand.official_social_urls,
+            "official_apps": brand.official_apps,
+            "official_developers": brand.official_developers,
+            "logo_url": brand.logo_url,
+        }
+
+        # 2. Candidate Discovery (Live vs Demo Mode)
+        is_demo_mode = bool(req.is_demo)
+        sources_status_dict: Dict[str, Any] = {}
+
+        if is_demo_mode:
+            social_items = connector_mgr.generate_demo_social_candidates(brand.name, brand_info)
+            app_items = connector_mgr.generate_demo_app_candidates(brand.name, brand_info)
+            sources_status_dict = connector_mgr.get_sources_status()
+        else:
+            # Query live connectors
+            social_items, social_statuses = connector_mgr.discover_live_social_candidates(brand.name, brand_info)
+            app_items, app_statuses = connector_mgr.discover_live_app_candidates(brand.name, brand_info)
+            sources_status_dict = {
+                "social": social_statuses,
+                "apps": app_statuses,
+                "summary": connector_mgr.get_sources_status(),
+            }
 
         findings: List[Dict[str, Any]] = []
 
-        # 1. Analyze social candidates in memory
+        # 3. Analyze social candidates in memory
         for item in social_items:
             det_input = DetectionInput(
                 brand_name=brand.name,
@@ -624,7 +563,7 @@ class ScanService:
                 description=item.bio,
                 image_url=item.image_url,
                 package_identifier=None,
-                is_demo=bool(item.is_demo or req.is_demo),
+                is_demo=bool(item.is_demo or is_demo_mode),
             )
             res = detector.analyze(det_input)
             findings.append({
@@ -648,15 +587,15 @@ class ScanService:
                 "explanation": res.explanation,
                 "review_status": "New",
                 "reviewStatus": "New",
-                "is_demo": bool(item.is_demo or req.is_demo),
-                "isDemo": bool(item.is_demo or req.is_demo),
+                "is_demo": bool(item.is_demo or is_demo_mode),
+                "isDemo": bool(item.is_demo or is_demo_mode),
                 "is_guest": True,
                 "created_at": utc_now().isoformat(),
                 "detectionDate": utc_now().isoformat(),
                 "avatarUrl": item.image_url or "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96",
             })
 
-        # 2. Analyze app candidates in memory
+        # 4. Analyze app candidates in memory
         for item in app_items:
             det_input = DetectionInput(
                 brand_name=brand.name,
@@ -673,7 +612,7 @@ class ScanService:
                 description=item.description,
                 image_url=item.icon_url,
                 package_identifier=item.package_identifier,
-                is_demo=bool(item.is_demo or req.is_demo),
+                is_demo=bool(item.is_demo or is_demo_mode),
             )
             res = detector.analyze(det_input)
             findings.append({
@@ -700,8 +639,8 @@ class ScanService:
                 "explanation": res.explanation,
                 "review_status": "New",
                 "reviewStatus": "New",
-                "is_demo": bool(item.is_demo or req.is_demo),
-                "isDemo": bool(item.is_demo or req.is_demo),
+                "is_demo": bool(item.is_demo or is_demo_mode),
+                "isDemo": bool(item.is_demo or is_demo_mode),
                 "is_guest": True,
                 "created_at": utc_now().isoformat(),
                 "detectionDate": utc_now().isoformat(),
@@ -710,6 +649,36 @@ class ScanService:
 
         total_candidates = len(social_items) + len(app_items)
 
+        # 5. Risk Summary & Honest Status Message
+        risk_summary = {
+            "Critical": len([f for f in findings if (f.get("risk_level") or "").lower() == "critical" or f.get("risk_score", 0) >= 80]),
+            "High": len([f for f in findings if (f.get("risk_level") or "").lower() == "high" or (60 <= f.get("risk_score", 0) < 80)]),
+            "Medium": len([f for f in findings if (f.get("risk_level") or "").lower() == "medium" or (30 <= f.get("risk_score", 0) < 60)]),
+            "Low": len([f for f in findings if (f.get("risk_level") or "").lower() == "low" or f.get("risk_score", 0) < 30]),
+        }
+
+        # Determine clear evidence-based scan summary message
+        high_severity = risk_summary["Critical"] + risk_summary["High"]
+        if is_demo_mode:
+            scan_msg = f"Demonstration Scan Mode: Generated {total_candidates} simulated candidates across social & app vectors."
+        elif not brand_val.get("verified") and len(findings) == 0:
+            scan_msg = (
+                f"No suspicious candidates found on monitored channels. "
+                f"Notice: Brand identity for '{brand.name}' could not be verified from available registries."
+            )
+        elif brand_val.get("verified") and high_severity == 0:
+            dom = brand_val.get("domain") or "official profile"
+            scan_msg = f"Brand verified ({dom}). No threats discovered across monitored channels."
+        elif len(findings) == 0:
+            scan_msg = f"No matching candidates retrieved from active connectors for '{brand.name}'."
+        else:
+            scan_msg = (
+                f"Completed surveillance scan: Retrieved {total_candidates} candidates. "
+                f"Identified {high_severity} high/critical risk items."
+            )
+
+        sources_checked_list = ["Apple App Store", "Google Play Store", "GitHub", "Twitter/X", "Telegram"]
+
         return {
             "brand_name": brand.name,
             "status": "completed",
@@ -717,10 +686,14 @@ class ScanService:
             "findings_generated": len(findings),
             "social_analyzed": len(social_items),
             "apps_analyzed": len(app_items),
-            "sources_checked": ["Twitter/X", "Telegram", "Instagram", "Google Play Store", "Apple App Store", "APK Mirror"],
+            "sources_checked": sources_checked_list,
             "findings": findings,
-            "is_demo": bool(req.is_demo),
+            "is_demo": is_demo_mode,
             "is_guest": True,
+            "sources_status": sources_status_dict,
+            "brand_verification": brand_val,
+            "scan_message": scan_msg,
+            "risk_summary": risk_summary,
             "privacy_notice": (
                 "GUEST DATA PRIVACY: This scan was processed entirely in memory. "
                 "No brand details, scans, or findings were persisted in the database."

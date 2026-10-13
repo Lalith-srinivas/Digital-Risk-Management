@@ -326,7 +326,7 @@ export const api = {
    * Primary Brand-First Orchestration Scan:
    * Executes coordinated social & app store monitoring for a registered brand.
    */
-  async scanBrand(brandId, isDemo = true) {
+  async scanBrand(brandId, isDemo = false) {
     try {
       const data = await this.request(`/brands/${brandId}/scan?is_demo=${isDemo}`, {
         method: 'POST',
@@ -338,7 +338,7 @@ export const api = {
           ...data,
           findings: normalizedFindings,
         },
-        isDemoData: false,
+        isDemoData: Boolean(data.is_demo),
       };
     } catch (err) {
       console.warn('Backend brand scan request exception, checking stored findings:', err);
@@ -467,10 +467,42 @@ export const api = {
   },
 
   /**
+   * Connector and data source readiness check
+   */
+  async getConnectorsStatus() {
+    try {
+      const data = await this.request('/connectors/status', { method: 'GET' });
+      return { data, isDemoData: false };
+    } catch (err) {
+      return {
+        data: {
+          app_sources: [
+            { name: 'Apple App Store', source_type: 'app', status: 'active', is_configured: true, description: 'Public Apple iTunes Search API' },
+            { name: 'Google Play Store', source_type: 'app', status: 'unconfigured', is_configured: false, message: 'GOOGLE_PLAY_API_KEY or SERPAPI_API_KEY required' },
+          ],
+          social_sources: [
+            { name: 'GitHub Profiles', source_type: 'social', status: 'active', is_configured: true, description: 'Public GitHub search API' },
+            { name: 'Twitter/X Surveillance', source_type: 'social', status: 'unconfigured', is_configured: false, message: 'TWITTER_BEARER_TOKEN required' },
+            { name: 'Telegram Channels', source_type: 'social', status: 'unconfigured', is_configured: false, message: 'TELEGRAM_BOT_TOKEN required' },
+          ],
+          active_app_connectors: 1,
+          total_app_connectors: 2,
+          active_social_connectors: 1,
+          total_social_connectors: 4,
+          live_app_scanning_ready: true,
+          live_social_scanning_ready: false,
+        },
+        isDemoData: true,
+      };
+    }
+  },
+
+  /**
    * Guest Scanning Workflow (In-Memory, Zero Persistent DB Writes):
    * Analyzes social & app vectors in memory and returns threat dossiers directly.
    */
   async scanGuest(brandData) {
+    const isDemoRequested = Boolean(brandData.is_demo);
     const payload = {
       name: brandData.name || brandData.brand_name || brandData.brandName,
       website: brandData.website || brandData.websiteUrl || null,
@@ -479,7 +511,7 @@ export const api = {
       official_apps: brandData.official_apps || brandData.officialApps || [],
       official_developers: brandData.official_developers || brandData.officialDevelopers || [],
       aliases: brandData.aliases || [],
-      is_demo: brandData.is_demo !== undefined ? brandData.is_demo : true,
+      is_demo: isDemoRequested,
     };
 
     try {
@@ -496,8 +528,34 @@ export const api = {
         isGuest: true,
       };
     } catch (err) {
-      console.warn('Backend guest scan failed, falling back to dynamic simulated analysis:', err);
+      console.warn('Backend guest scan failed:', err);
       const brandName = payload.name;
+
+      if (!isDemoRequested) {
+        return {
+          brand_name: brandName,
+          status: 'error',
+          error: true,
+          candidates_analyzed: 0,
+          findings_generated: 0,
+          social_analyzed: 0,
+          apps_analyzed: 0,
+          sources_checked: ['Apple App Store', 'GitHub Public'],
+          sources_status: {
+            apple_app_store: { status: 'error', message: err.message || 'Service connection error' },
+            github: { status: 'error', message: err.message || 'Service connection error' },
+            twitter: { status: 'unconfigured', message: 'API credentials required' },
+            telegram: { status: 'unconfigured', message: 'API credentials required' },
+            google_play: { status: 'unconfigured', message: 'API credentials required' }
+          },
+          findings: [],
+          is_demo: false,
+          is_guest: true,
+          scan_message: 'Live scanning unavailable: Unable to contact surveillance engine. Configure live data connectors or select Demo Simulation Mode.',
+          privacy_notice: 'GUEST DATA PRIVACY: This scan was processed entirely in memory.',
+        };
+      }
+
       const slug = brandName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'brand';
 
       const demoFindings = [
@@ -510,7 +568,7 @@ export const api = {
           candidateHandle: `@${slug}_support_desk`,
           candidateUrl: `https://x.com/${slug}_support_desk`,
           avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=96',
-          riskScore: 89,
+          riskScore: 85,
           riskLevel: 'High',
           reasons: [`Account claiming official support status for ${brandName} without verified organization badge`],
           detectionDate: new Date().toISOString(),
@@ -528,25 +586,9 @@ export const api = {
           avatarUrl: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=96',
           developer: 'Unauthorized Mod Network',
           packageId: `com.unauthorized.${slug}.mod`,
-          riskScore: 94,
+          riskScore: 88,
           riskLevel: 'High',
           reasons: [`Package identifier mimics official ${brandName} namespace`],
-          detectionDate: new Date().toISOString(),
-          reviewStatus: 'Needs Review',
-          isDemoData: true,
-        }),
-        normalizeFinding({
-          id: `guest-dyn-${Date.now()}-3`,
-          brandName,
-          candidateName: `${brandName} Bonus & Community Rewards`,
-          sourceType: 'social',
-          platform: 'Telegram',
-          candidateHandle: `@${slug}_rewards_bot`,
-          candidateUrl: `https://t.me/${slug}_rewards_bot`,
-          avatarUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96',
-          riskScore: 80,
-          riskLevel: 'High',
-          reasons: [`Suspicious token giveaway channel soliciting credentials under ${brandName} mark`],
           detectionDate: new Date().toISOString(),
           reviewStatus: 'Needs Review',
           isDemoData: true,
@@ -556,15 +598,77 @@ export const api = {
       return {
         brand_name: brandName,
         status: 'completed',
-        candidates_analyzed: 8,
+        candidates_analyzed: demoFindings.length,
         findings_generated: demoFindings.length,
-        social_analyzed: 5,
-        apps_analyzed: 3,
-        sources_checked: ['Twitter/X', 'Telegram', 'Instagram', 'Google Play Store', 'Apple App Store'],
+        social_analyzed: demoFindings.filter(f => f.sourceType === 'social').length,
+        apps_analyzed: demoFindings.filter(f => f.sourceType === 'app').length,
+        sources_checked: ['Apple App Store', 'Twitter/X', 'Telegram'],
+        sources_status: {
+          apple_app_store: { status: 'demo', message: 'Simulated candidates' },
+          twitter: { status: 'demo', message: 'Simulated candidates' },
+          telegram: { status: 'demo', message: 'Simulated candidates' }
+        },
         findings: demoFindings,
         is_demo: true,
         is_guest: true,
+        scan_message: 'Demo Simulation Mode: Synthetic candidate dataset generated for evaluation.',
         privacy_notice: 'GUEST DATA PRIVACY: This scan was processed entirely in memory.',
+      };
+    }
+  },
+
+  /**
+   * Data Source Connectors Status:
+   * Returns live status and configuration needs of all external connectors.
+   */
+  async getConnectorsStatus() {
+    try {
+      const data = await this.request('/connectors/status', { method: 'GET' });
+      return { data, isDemoData: false };
+    } catch (err) {
+      console.warn('Could not fetch connector status from backend, using descriptor:', err);
+      return {
+        data: {
+          apple_app_store: {
+            name: 'Apple App Store (iTunes API)',
+            status: 'active',
+            type: 'app_store',
+            requires_auth: false,
+            message: 'Active - Public iTunes Search API operational',
+          },
+          github: {
+            name: 'GitHub Public Repository & User Search',
+            status: 'active',
+            type: 'social',
+            requires_auth: false,
+            message: 'Active - Public GitHub search API operational',
+          },
+          google_play: {
+            name: 'Google Play Store',
+            status: 'unconfigured',
+            type: 'app_store',
+            requires_auth: true,
+            required_keys: ['GOOGLE_PLAY_API_KEY', 'SERPAPI_API_KEY'],
+            message: 'Unconfigured - requires GOOGLE_PLAY_API_KEY or SERPAPI_API_KEY',
+          },
+          twitter: {
+            name: 'Twitter/X API v2',
+            status: 'unconfigured',
+            type: 'social',
+            requires_auth: true,
+            required_keys: ['TWITTER_BEARER_TOKEN'],
+            message: 'Unconfigured - requires TWITTER_BEARER_TOKEN',
+          },
+          telegram: {
+            name: 'Telegram Bot API',
+            status: 'unconfigured',
+            type: 'social',
+            requires_auth: true,
+            required_keys: ['TELEGRAM_BOT_TOKEN'],
+            message: 'Unconfigured - requires TELEGRAM_BOT_TOKEN',
+          },
+        },
+        isDemoData: true,
       };
     }
   },
@@ -574,6 +678,7 @@ export const api = {
   // ==========================================
 
   async scanSocial(scanPayload) {
+    const isDemoRequested = Boolean(scanPayload.is_demo);
     try {
       // If manual candidate payload provided
       let body;
@@ -587,15 +692,15 @@ export const api = {
             platform: scanPayload.platform || 'Twitter/X',
             bio: scanPayload.description,
             image_url: scanPayload.avatarUrl,
-            is_demo: true,
+            is_demo: isDemoRequested,
           }],
-          is_demo: true,
+          is_demo: isDemoRequested,
         };
       } else {
         // Brand-first scan (auto-discovery)
         body = {
           brand_id: scanPayload.brandId,
-          is_demo: true,
+          is_demo: isDemoRequested,
         };
       }
 
@@ -605,6 +710,9 @@ export const api = {
       });
       return { data, isDemoData: false };
     } catch (err) {
+      if (!isDemoRequested) {
+        throw new Error(err.message || 'Live social monitoring failed: Service unavailable.');
+      }
       const { brands, findings, scans } = getStoredDemoData();
       const brand = brands.find(b => b.id === scanPayload.brandId) || brands[0];
 
@@ -640,7 +748,7 @@ export const api = {
         target: 'Social Media',
         timestamp: new Date().toISOString(),
         duration: '14s',
-        candidatesAnalyzed: 5,
+        candidatesAnalyzed: 1,
         findingsGenerated: 1,
         status: 'Completed',
         isDemoData: true
@@ -660,6 +768,7 @@ export const api = {
   },
 
   async scanApps(scanPayload) {
+    const isDemoRequested = Boolean(scanPayload.is_demo);
     try {
       let body;
       if (scanPayload.appName || scanPayload.storeUrl || scanPayload.packageId) {
@@ -673,14 +782,14 @@ export const api = {
             store_type: scanPayload.storeType || 'APK Mirror',
             description: scanPayload.description,
             icon_url: scanPayload.iconUrl,
-            is_demo: true,
+            is_demo: isDemoRequested,
           }],
-          is_demo: true,
+          is_demo: isDemoRequested,
         };
       } else {
         body = {
           brand_id: scanPayload.brandId,
-          is_demo: true,
+          is_demo: isDemoRequested,
         };
       }
 
@@ -690,6 +799,9 @@ export const api = {
       });
       return { data, isDemoData: false };
     } catch (err) {
+      if (!isDemoRequested) {
+        throw new Error(err.message || 'Live mobile app monitoring failed: Service unavailable.');
+      }
       const { brands, findings, scans } = getStoredDemoData();
       const brand = brands.find(b => b.id === scanPayload.brandId) || brands[0];
 
@@ -727,7 +839,7 @@ export const api = {
         target: 'APK Distribution Channels',
         timestamp: new Date().toISOString(),
         duration: '19s',
-        candidatesAnalyzed: 3,
+        candidatesAnalyzed: 1,
         findingsGenerated: 1,
         status: 'Completed',
         isDemoData: true
@@ -859,8 +971,8 @@ export const api = {
       const appFindings = findings.filter(f => f.sourceType === 'app').length;
       const suspiciousFindings = findings.filter(f => (f.riskScore || 0) >= 60).length;
 
-      const socialScanned = 1248 + findings.length * 12;
-      const appsScanned = 412 + findings.length * 4;
+      const socialScanned = scans.reduce((acc, s) => acc + (s.type?.toLowerCase().includes('social') ? (s.candidatesAnalyzed || 0) : 0), 0) || socialFindings;
+      const appsScanned = scans.reduce((acc, s) => acc + (s.type?.toLowerCase().includes('app') ? (s.candidatesAnalyzed || 0) : 0), 0) || appFindings;
 
       const riskCounts = {
         High: findings.filter(f => f.riskLevel === 'High').length,

@@ -57,7 +57,7 @@ class GuestScanRequest(BaseModel):
     official_apps: List[str] = Field(default_factory=list, description="Known official app titles or IDs")
     official_developers: List[str] = Field(default_factory=list, description="Known authorized publisher/developer names")
     aliases: List[str] = Field(default_factory=list, description="Alternative spellings or aliases")
-    is_demo: bool = Field(True, description="Whether to include simulated threat candidates")
+    is_demo: bool = Field(False, description="Whether to include simulated threat candidates in demo mode")
 
     @classmethod
     def from_flexible_dict(cls, data: dict) -> "GuestScanRequest":
@@ -69,7 +69,7 @@ class GuestScanRequest(BaseModel):
             official_apps=data.get("official_apps") or data.get("officialApps") or [],
             official_developers=data.get("official_developers") or data.get("officialDevelopers") or [],
             aliases=data.get("aliases") or [],
-            is_demo=data.get("is_demo", True),
+            is_demo=bool(data.get("is_demo", False)),
         )
 
 
@@ -82,8 +82,12 @@ class GuestScanResponse(BaseModel):
     apps_analyzed: int
     sources_checked: List[str]
     findings: List[Dict[str, Any]]
-    is_demo: bool = True
+    is_demo: bool = False
     is_guest: bool = True
+    sources_status: Optional[Dict[str, Any]] = None
+    brand_verification: Optional[Dict[str, Any]] = None
+    scan_message: Optional[str] = None
+    risk_summary: Optional[Dict[str, int]] = None
     privacy_notice: str = (
         "GUEST DATA PRIVACY: This scan was processed entirely in memory. "
         "No brand details, scans, or findings were persisted in the database."

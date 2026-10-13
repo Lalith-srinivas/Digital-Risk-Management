@@ -39,6 +39,7 @@ export default function BrandScan() {
   const [isScanning, setIsScanning] = useState(false);
   const [currentStage, setCurrentStage] = useState(0);
   const [scanError, setScanError] = useState(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -99,7 +100,7 @@ export default function BrandScan() {
         official_apps: appList,
         official_developers: devList,
         aliases: aliasList,
-        is_demo: true,
+        is_demo: isDemoMode,
       };
 
       let scanResults;
@@ -116,19 +117,19 @@ export default function BrandScan() {
           aliases: brandPayload.aliases,
         });
 
-        const scanRes = await api.scanBrand(created.data.id, true);
+        const scanRes = await api.scanBrand(created.data.id, isDemoMode);
         const resolvedFindings = scanRes.data?.findings || [];
         scanResults = {
           brand_name: brandPayload.name,
           brand_id: created.data.id,
           status: 'completed',
-          candidates_analyzed: scanRes.data?.candidates_analyzed || resolvedFindings.length || 8,
-          findings_generated: scanRes.data?.findings_generated || resolvedFindings.length,
-          social_analyzed: resolvedFindings.filter(f => (f.sourceType || f.source_type) === 'social').length || 5,
-          apps_analyzed: resolvedFindings.filter(f => (f.sourceType || f.source_type) === 'app').length || 3,
-          sources_checked: ['Twitter/X', 'Telegram', 'Instagram', 'Google Play Store', 'Apple App Store'],
+          candidates_analyzed: scanRes.data?.candidates_analyzed !== undefined ? scanRes.data.candidates_analyzed : resolvedFindings.length,
+          findings_generated: scanRes.data?.findings_generated !== undefined ? scanRes.data.findings_generated : resolvedFindings.length,
+          social_analyzed: resolvedFindings.filter(f => (f.sourceType || f.source_type) === 'social').length,
+          apps_analyzed: resolvedFindings.filter(f => (f.sourceType || f.source_type) === 'app').length,
+          sources_checked: ['Apple App Store', 'Google Play Store', 'GitHub', 'Twitter/X', 'Telegram'],
           findings: resolvedFindings,
-          is_demo: true,
+          is_demo: isDemoMode,
           is_guest: false,
         };
       } else {
@@ -492,6 +493,64 @@ export default function BrandScan() {
                 boxSizing: 'border-box',
               }}
             />
+          </div>
+
+          {/* Scan Discovery Mode Selector */}
+          <div style={{
+            marginBottom: '28px',
+            padding: '18px 20px',
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '10px',
+          }}>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '10px' }}>
+              Surveillance Discovery Mode
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
+              <div
+                onClick={() => setIsDemoMode(false)}
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: '8px',
+                  border: !isDemoMode ? '2px solid #4f46e5' : '1px solid #cbd5e1',
+                  background: !isDemoMode ? '#eef2ff' : '#ffffff',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: !isDemoMode ? '#4338ca' : '#1e293b' }}>
+                    Live Surveillance Scan
+                  </span>
+                  {!isDemoMode && <CheckCircle2 size={16} color="#4f46e5" />}
+                </div>
+                <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: '1.4' }}>
+                  Queries real app stores & available connectors. Never invents profiles or fabricated candidates.
+                </p>
+              </div>
+
+              <div
+                onClick={() => setIsDemoMode(true)}
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: '8px',
+                  border: isDemoMode ? '2px solid #7c3aed' : '1px solid #cbd5e1',
+                  background: isDemoMode ? '#f5f3ff' : '#ffffff',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: isDemoMode ? '#6d28d9' : '#1e293b' }}>
+                    Simulation Demo Mode
+                  </span>
+                  {isDemoMode && <CheckCircle2 size={16} color="#7c3aed" />}
+                </div>
+                <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: '1.4' }}>
+                  Generates clearly labelled demo candidates to evaluate threat scoring when live social APIs are unconfigured.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Submit Button */}

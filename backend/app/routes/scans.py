@@ -19,8 +19,22 @@ from app.schemas.scan import (
 )
 from app.schemas.finding import FindingResponse
 from app.services.scan_service import ScanService
+from app.connectors import get_connector_manager
 
 router = APIRouter(tags=["Scans"])
+
+
+@router.get(
+    "/connectors/status",
+    summary="Get Data Source Connectors Status & API Requirements",
+)
+def get_connectors_status() -> Dict[str, Any]:
+    """
+    Returns live connectivity status, required API keys, and availability
+    of external data-source connectors for social media and application marketplaces.
+    """
+    return get_connector_manager().get_sources_status()
+
 
 
 @router.post(
