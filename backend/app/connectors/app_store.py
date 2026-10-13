@@ -174,18 +174,34 @@ class GooglePlayStoreConnector(BaseConnector):
                     )
 
                 data = resp.json()
-                items = data.get("organic_results", [])
+                raw_sections = data.get("organic_results", [])
                 candidates: List[AppCandidateInput] = []
 
-                for item in items:
+                # Flatten app entries from highlight or sections
+                app_list = []
+                if isinstance(data.get("app_highlight"), dict):
+                    app_list.append(data["app_highlight"])
+
+                for sec in raw_sections:
+                    if isinstance(sec, dict):
+                        if "items" in sec and isinstance(sec["items"], list):
+                            app_list.extend(sec["items"])
+                        elif sec.get("title") or sec.get("product_id"):
+                            app_list.append(sec)
+
+                seen_pids = set()
+                for item in app_list:
                     title = item.get("title")
-                    if not title:
+                    pid = item.get("product_id") or item.get("package_name") or ""
+                    if not title or pid in seen_pids:
                         continue
+                    seen_pids.add(pid)
+
                     candidates.append(
                         AppCandidateInput(
                             app_name=title,
-                            package_identifier=item.get("product_id") or item.get("package_name") or "",
-                            developer_name=item.get("developer"),
+                            package_identifier=pid,
+                            developer_name=item.get("author") or item.get("developer"),
                             store_url=item.get("link"),
                             store_type="Google Play Store",
                             description=(item.get("description") or "")[:500],
@@ -193,6 +209,8 @@ class GooglePlayStoreConnector(BaseConnector):
                             is_demo=False,
                         )
                     )
+                    if len(candidates) >= limit:
+                        break
 
                 return ConnectorResult(
                     connector_name="Google Play Store",

@@ -1,4 +1,5 @@
 import os
+import re
 import httpx
 from typing import List, Dict, Any, Optional
 from app.connectors.base import BaseConnector, ConnectorResult
@@ -257,15 +258,64 @@ class TelegramConnector(BaseConnector):
                 is_live=False,
             )
 
-        return ConnectorResult(
-            connector_name="Telegram",
-            source_type="social",
-            status="active",
-            message="Telegram live search not implemented for current token scope.",
-            candidates=[],
-            total_found=0,
-            is_live=True,
-        )
+        slug = re.sub(r"[^a-zA-Z0-9_]", "", query.lower().replace(" ", "_")) or "brand"
+        handles_to_probe = [
+            f"@{slug}",
+            f"@{slug}_support",
+            f"@{slug}_official",
+            f"@{slug}_app",
+            f"@{slug}official",
+        ][:min(limit, 5)]
+
+        candidates: List[SocialCandidateInput] = []
+
+        try:
+            with httpx.Client(timeout=4.0) as client:
+                for handle in handles_to_probe:
+                    try:
+                        url = f"https://api.telegram.org/bot{self.bot_token}/getChat"
+                        resp = client.get(url, params={"chat_id": handle})
+                        if resp.status_code == 200:
+                            data = resp.json()
+                            if data.get("ok") and "result" in data:
+                                chat = data["result"]
+                                uname = chat.get("username") or handle.lstrip("@")
+                                title = chat.get("title") or f"{chat.get('first_name', '')} {chat.get('last_name', '')}".strip() or uname
+                                bio = chat.get("description") or chat.get("bio") or ""
+
+                                candidates.append(
+                                    SocialCandidateInput(
+                                        display_name=title,
+                                        username=f"@{uname}",
+                                        profile_url=f"https://t.me/{uname}",
+                                        platform="Telegram",
+                                        bio=bio[:500],
+                                        image_url=None,
+                                        is_demo=False,
+                                    )
+                                )
+                    except Exception:
+                        continue
+
+            return ConnectorResult(
+                connector_name="Telegram",
+                source_type="social",
+                status="active",
+                message=f"Live resolved {len(candidates)} public Telegram channels/bots",
+                candidates=candidates,
+                total_found=len(candidates),
+                is_live=True,
+            )
+        except Exception as ex:
+            return ConnectorResult(
+                connector_name="Telegram",
+                source_type="social",
+                status="error",
+                message=f"Telegram query error: {str(ex)}",
+                candidates=[],
+                total_found=0,
+                is_live=True,
+            )
 
 
 class WebSearchConnector(BaseConnector):

@@ -1,5 +1,6 @@
 import re
 from typing import List, Dict, Any, Tuple, Optional
+from app.config import settings
 from app.connectors.base import BaseConnector, ConnectorResult
 from app.connectors.app_store import AppleAppStoreConnector, GooglePlayStoreConnector
 from app.connectors.social import GitHubConnector, TwitterConnector, TelegramConnector, WebSearchConnector
