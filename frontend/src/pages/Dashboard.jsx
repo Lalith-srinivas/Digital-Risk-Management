@@ -35,6 +35,7 @@ import RiskBadge from '../components/RiskBadge';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
 import DemoBanner from '../components/DemoBanner';
+import Modal from '../components/Modal';
 import api from '../services/api';
 import { formatNumber, formatDate, formatRelativeTime } from '../utils/formatters';
 
@@ -123,6 +124,15 @@ export default function Dashboard() {
       }
 
       setShowAddBrandModal(false);
+      setOnboardingForm({
+        name: '',
+        website: '',
+        logo: '',
+        officialSocials: '',
+        officialApps: '',
+        developerNames: '',
+        aliases: '',
+      });
       await loadDashboardData();
     } catch (err) {
       setOnboardingError(err.message || 'Failed to register brand and initiate monitoring.');
@@ -180,6 +190,158 @@ export default function Dashboard() {
   return (
     <div>
       <DemoBanner isDemo={isDemo} />
+
+      {/* Monitor New Brand Modal Dialog */}
+      <Modal
+        isOpen={showAddBrandModal}
+        onClose={() => setShowAddBrandModal(false)}
+        title="Monitor New Brand"
+        size="large"
+      >
+        <div style={{ padding: '4px 0' }}>
+          <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', marginBottom: 20 }}>
+            Register a brand entity under active surveillance. SOC 360 will continuously monitor social media channels and application marketplaces for impersonators and malicious clones.
+          </p>
+
+          {onboardingError && (
+            <div style={{
+              padding: '10px 14px',
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: 'var(--radius-sm)',
+              color: '#b91c1c',
+              fontSize: '0.8rem',
+              marginBottom: 16
+            }}>
+              {onboardingError}
+            </div>
+          )}
+
+          <form onSubmit={handleOnboardingSubmit}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+              <div className="form-group">
+                <label className="form-label">
+                  Brand Name <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. Acme Corp"
+                  value={onboardingForm.name}
+                  onChange={(e) => setOnboardingForm(prev => ({ ...prev, name: e.target.value }))}
+                  required
+                />
+                <span className="form-hint">Required. Core trademark name to monitor.</span>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  Official Website <span style={{ color: 'var(--text-muted)' }}>(Optional)</span>
+                </label>
+                <input
+                  type="url"
+                  className="form-input"
+                  placeholder="https://acmecorp.com"
+                  value={onboardingForm.website}
+                  onChange={(e) => setOnboardingForm(prev => ({ ...prev, website: e.target.value }))}
+                />
+                <span className="form-hint">Used as authoritative baseline to exclude genuine domains.</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+              <div className="form-group">
+                <label className="form-label">
+                  Official Logo URL <span style={{ color: 'var(--text-muted)' }}>(Optional)</span>
+                </label>
+                <input
+                  type="url"
+                  className="form-input"
+                  placeholder="https://example.com/logo.png"
+                  value={onboardingForm.logo}
+                  onChange={(e) => setOnboardingForm(prev => ({ ...prev, logo: e.target.value }))}
+                />
+                <span className="form-hint">Used for ImageHash logo comparison.</span>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  Brand Aliases & Alternative Spellings <span style={{ color: 'var(--text-muted)' }}>(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Acme, AcmeApp, Acme Global (comma-separated)"
+                  value={onboardingForm.aliases}
+                  onChange={(e) => setOnboardingForm(prev => ({ ...prev, aliases: e.target.value }))}
+                />
+                <span className="form-hint">Secondary brand representations.</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
+              <div className="form-group">
+                <label className="form-label">
+                  Known Official Social URLs <span style={{ color: 'var(--text-muted)' }}>(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="https://x.com/acme, https://instagram.com/acme"
+                  value={onboardingForm.officialSocials}
+                  onChange={(e) => setOnboardingForm(prev => ({ ...prev, officialSocials: e.target.value }))}
+                />
+                <span className="form-hint">Legitimate accounts to exclude from threat scoring.</span>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">
+                  Authorized Publisher / Developer Names <span style={{ color: 'var(--text-muted)' }}>(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="Acme Technologies Inc."
+                  value={onboardingForm.developerNames}
+                  onChange={(e) => setOnboardingForm(prev => ({ ...prev, developerNames: e.target.value }))}
+                />
+                <span className="form-hint">Authorized store publisher identities.</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, borderTop: '1px solid var(--border-light)' }}>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => {
+                  setShowAddBrandModal(false);
+                  navigate('/scan');
+                }}
+              >
+                <span>Or Run Quick Ad-hoc Scan →</span>
+              </button>
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setShowAddBrandModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={onboardingSubmitting}
+                >
+                  <Play size={14} />
+                  <span>{onboardingSubmitting ? 'Registering & Scanning...' : 'Start Monitoring Brand'}</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </Modal>
 
       <div className="page-content">
         {/* Top Actions Bar */}
