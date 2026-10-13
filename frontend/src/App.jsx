@@ -168,25 +168,55 @@ function ScanFlowLayout({ children }) {
           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), 0 1px 1px rgba(255, 255, 255, 0.8) inset;
           transition: all 0.25s ease;
         }
+        .guest-flow-main {
+          flex: 1;
+          padding: 16px;
+        }
         @media (max-width: 640px) {
           .guest-floating-navbar {
-            top: 10px;
-            margin: 10px auto 6px;
+            top: 8px;
+            margin: 8px auto 6px;
             width: calc(100% - 20px);
-            padding: 8px 14px;
+            padding: 8px 12px;
+          }
+          .guest-flow-main {
+            padding: 8px 6px;
           }
           .guest-scan-badge {
             display: none !important;
           }
           .guest-nav-btn {
-            padding: 6px 12px !important;
+            padding: 6px 11px !important;
             font-size: 12px !important;
+          }
+        }
+        @media (max-width: 420px) {
+          .guest-floating-navbar {
+            top: 6px;
+            margin: 6px auto 4px;
+            width: calc(100% - 14px);
+            padding: 6px 8px;
+            gap: 4px;
+          }
+          .guest-logo-icon {
+            width: 28px !important;
+            height: 28px !important;
+          }
+          .guest-logo-text {
+            font-size: 14px !important;
+          }
+          .guest-nav-actions {
+            gap: 4px !important;
+          }
+          .guest-nav-btn {
+            padding: 5px 8px !important;
+            font-size: 11px !important;
           }
         }
       `}</style>
       <header className="guest-floating-navbar">
-        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
+        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+          <div className="guest-logo-icon" style={{
             width: '34px',
             height: '34px',
             borderRadius: '10px',
@@ -195,16 +225,17 @@ function ScanFlowLayout({ children }) {
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
+            flexShrink: 0,
             boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
           }}>
-            <ShieldAlert size={18} />
+            <ShieldAlert size={17} />
           </div>
-          <span style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.3px' }}>SOC 360</span>
-          <span className="guest-scan-badge" style={{ fontSize: '11px', color: '#4f46e5', fontWeight: '700', background: '#e0e7ff', border: '1px solid #c7d2fe', padding: '2px 8px', borderRadius: '12px' }}>
+          <span className="guest-logo-text" style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.3px', whiteSpace: 'nowrap' }}>SOC 360</span>
+          <span className="guest-scan-badge" style={{ fontSize: '11px', color: '#4f46e5', fontWeight: '700', background: '#e0e7ff', border: '1px solid #c7d2fe', padding: '2px 8px', borderRadius: '12px', whiteSpace: 'nowrap' }}>
             Guest Scan
           </span>
         </Link>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div className="guest-nav-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
           <Link
             to="/login"
             className="guest-nav-btn"
@@ -221,7 +252,7 @@ function ScanFlowLayout({ children }) {
           </Link>
         </div>
       </header>
-      <main style={{ flex: 1, padding: '16px' }}>
+      <main className="guest-flow-main">
         {children}
       </main>
     </div>

@@ -62,7 +62,7 @@ export default function Settings() {
   };
 
   return (
-    <div style={{ maxWidth: '860px', margin: '24px auto', padding: '0 24px' }}>
+    <div className="brand-scan-container" style={{ maxWidth: '860px' }}>
       {/* Page Header */}
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
@@ -128,14 +128,7 @@ export default function Settings() {
       )}
 
       {/* Profile Overview Card */}
-      <div style={{
-        background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: '12px',
-        padding: '28px',
-        marginBottom: '24px',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-      }}>
+      <div className="brand-scan-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
           <div style={{
             width: '68px',
@@ -177,7 +170,7 @@ export default function Settings() {
 
         {/* Edit Profile Form */}
         <form onSubmit={handleSaveProfile}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '18px', marginBottom: '20px' }}>
+          <div className="form-grid-2col" style={{ marginBottom: '20px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
                 Full Name

@@ -124,13 +124,7 @@ export default function FindingDetails() {
 
         {/* Top Header Card */}
         <div className="card" style={{ padding: '24px 28px' }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            gap: 18
-          }}>
+          <div className="finding-header-card">
             <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
               <img
                 src={finding.avatarUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96'}
@@ -179,7 +173,7 @@ export default function FindingDetails() {
             </div>
 
             {/* Overall Score Gauge Banner */}
-            <div style={{
+            <div className="finding-score-gauge" style={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'flex-end',
@@ -207,7 +201,7 @@ export default function FindingDetails() {
         </div>
 
         {/* Two-Column Dossier Content */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 22 }}>
+        <div className="finding-dossier-grid">
           {/* LEFT: Comparison & Evidence Signals */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
             {/* Side-by-Side Brand vs Candidate Asset Comparison */}
@@ -219,15 +213,7 @@ export default function FindingDetails() {
                 </div>
               </div>
 
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 16,
-                backgroundColor: '#f8fafc',
-                padding: '16px',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-light)'
-              }}>
+              <div className="asset-comparison-grid">
                 {/* Genuine Brand Column */}
                 <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: 'var(--radius-sm)', border: '1px solid #e2e8f0' }}>
                   <div style={{

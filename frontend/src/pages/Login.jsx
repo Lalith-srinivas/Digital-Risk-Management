@@ -42,23 +42,8 @@ export default function Login() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: '#f8fafc',
-      padding: '24px',
-    }}>
-      <div style={{
-        maxWidth: '420px',
-        width: '100%',
-        background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: '16px',
-        padding: '36px 32px',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
-      }}>
+    <div className="auth-page-wrapper">
+      <div className="auth-card">
         {/* Brand Header */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div style={{

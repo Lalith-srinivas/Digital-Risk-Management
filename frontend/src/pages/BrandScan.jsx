@@ -156,16 +156,9 @@ export default function BrandScan() {
   };
 
   return (
-    <div style={{ maxWidth: '820px', margin: '32px auto', padding: '0 20px' }}>
+    <div className="brand-scan-container">
       {/* Header Banner */}
-      <div style={{
-        background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: '12px',
-        padding: '28px 32px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-        marginBottom: '24px',
-      }}>
+      <div className="brand-scan-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '8px' }}>
           <div style={{
             width: '42px',
@@ -176,14 +169,15 @@ export default function BrandScan() {
             alignItems: 'center',
             justifyContent: 'center',
             color: '#fff',
+            flexShrink: 0,
           }}>
             <ShieldAlert size={22} />
           </div>
-          <div>
-            <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', margin: 0, lineHeight: 1.25 }}>
               {user ? 'Register & Monitor Brand' : 'Brand-First Digital Risk Scan'}
             </h1>
-            <p style={{ fontSize: '14px', color: '#64748b', margin: '4px 0 0' }}>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0' }}>
               {user
                 ? 'Register an enterprise brand profile to start continuous multi-channel monitoring.'
                 : 'Run an immediate guest surveillance scan across social channels and mobile application marketplaces.'}
@@ -214,14 +208,8 @@ export default function BrandScan() {
 
       {/* Progress Overlay during Scan */}
       {isScanning && (
-        <div style={{
-          background: '#ffffff',
-          border: '1px solid #e2e8f0',
-          borderRadius: '12px',
-          padding: '36px 32px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+        <div className="brand-scan-card" style={{
           textAlign: 'center',
-          marginBottom: '24px',
         }}>
           <div style={{
             width: '56px',
@@ -304,13 +292,7 @@ export default function BrandScan() {
 
       {/* Main Form */}
       {!isScanning && (
-        <form onSubmit={handleSubmit} style={{
-          background: '#ffffff',
-          border: '1px solid #e2e8f0',
-          borderRadius: '12px',
-          padding: '32px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-        }}>
+        <form onSubmit={handleSubmit} className="brand-scan-form">
           {/* Brand Name (Required) */}
           <div style={{ marginBottom: '22px' }}>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
@@ -506,7 +488,7 @@ export default function BrandScan() {
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '700', color: '#0f172a', marginBottom: '10px' }}>
               Surveillance Discovery Mode
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
+            <div className="discovery-mode-grid">
               <div
                 onClick={() => setIsDemoMode(false)}
                 style={{

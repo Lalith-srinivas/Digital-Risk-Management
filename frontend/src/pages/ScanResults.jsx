@@ -468,9 +468,9 @@ export default function ScanResults() {
       {/* Metrics KPI Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '16px',
-        marginBottom: '24px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+        gap: '12px',
+        marginBottom: '20px',
       }}>
         <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', textAlign: 'center' }}>
           <div style={{ fontSize: '12px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Candidates Scanned</div>
@@ -521,7 +521,7 @@ export default function ScanResults() {
         gap: '14px',
       }}>
         {/* Vector Tabs */}
-        <div style={{ display: 'flex', gap: '6px' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {[
             { id: 'all', label: `All Findings (${findings.length})` },
             { id: 'social', label: `Social Media (${findings.filter(f => (f.sourceType || f.source_type) === 'social').length})` },
@@ -547,8 +547,8 @@ export default function ScanResults() {
         </div>
 
         {/* Search & Risk Level Filter */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ position: 'relative' }}>
+        <div className="table-filter-toolbar">
+          <div style={{ position: 'relative', flex: 1, minWidth: 180 }}>
             <Search size={15} style={{ position: 'absolute', left: '10px', top: '10px', color: '#94a3b8' }} />
             <input
               type="text"
@@ -561,7 +561,8 @@ export default function ScanResults() {
                 border: '1px solid #cbd5e1',
                 borderRadius: '6px',
                 outline: 'none',
-                width: '200px',
+                width: '100%',
+                boxSizing: 'border-box',
               }}
             />
           </div>
@@ -641,8 +642,8 @@ export default function ScanResults() {
             )}
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+          <div className="table-responsive">
+            <table className="data-table" style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: '700', fontSize: '12px', textTransform: 'uppercase' }}>
                   <th style={{ padding: '12px 18px' }}>Candidate Identity</th>

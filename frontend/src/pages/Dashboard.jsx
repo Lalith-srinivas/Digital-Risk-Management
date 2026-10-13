@@ -218,7 +218,7 @@ export default function Dashboard() {
           )}
 
           <form onSubmit={handleOnboardingSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+            <div className="form-grid-2col">
               <div className="form-group">
                 <label className="form-label">
                   Brand Name <span style={{ color: '#ef4444' }}>*</span>
@@ -249,7 +249,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+            <div className="form-grid-2col">
               <div className="form-group">
                 <label className="form-label">
                   Official Logo URL <span style={{ color: 'var(--text-muted)' }}>(Optional)</span>
@@ -279,7 +279,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
+            <div className="form-grid-2col" style={{ marginBottom: 20 }}>
               <div className="form-group">
                 <label className="form-label">
                   Known Official Social URLs <span style={{ color: 'var(--text-muted)' }}>(Optional)</span>
@@ -309,7 +309,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 14, borderTop: '1px solid var(--border-light)' }}>
+            <div className="modal-footer-actions">
               <button
                 type="button"
                 className="btn btn-outline"
@@ -345,14 +345,7 @@ export default function Dashboard() {
 
       <div className="page-content">
         {/* Top Actions Bar */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 18,
-          flexWrap: 'wrap',
-          gap: 12
-        }}>
+        <div className="dashboard-action-bar">
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
               Executive Risk Dashboard
@@ -432,7 +425,7 @@ export default function Dashboard() {
               )}
 
               <form onSubmit={handleOnboardingSubmit}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+                <div className="form-grid-2col">
                   <div className="form-group">
                     <label className="form-label">
                       Brand Name <span style={{ color: '#ef4444' }}>*</span>
@@ -463,7 +456,7 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+                <div className="form-grid-2col">
                   <div className="form-group">
                     <label className="form-label">
                       Official Logo URL <span style={{ color: 'var(--text-muted)' }}>(Optional)</span>
@@ -606,7 +599,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div style={{ width: '100%', height: 260 }}>
+              <div className="chart-container-threat">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={threatTimeline} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>

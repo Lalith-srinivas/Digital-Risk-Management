@@ -222,12 +222,7 @@ export default function Findings() {
           flexDirection: 'column',
           gap: 14
         }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1.5fr repeat(4, 1fr)',
-            gap: 12,
-            alignItems: 'center'
-          }}>
+          <div className="findings-filter-grid">
             {/* Search */}
             <form onSubmit={handleSearchSubmit} style={{ position: 'relative' }}>
               <Search size={15} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }} />

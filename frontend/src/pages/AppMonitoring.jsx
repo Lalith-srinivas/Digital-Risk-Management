@@ -328,15 +328,9 @@ export default function AppMonitoring() {
 
         {/* PRIMARY BRAND-FIRST APP MONITORING CONTROLS */}
         <div className="card" style={{ padding: '18px 22px', marginBottom: 20 }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 16
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-              <div>
+          <div className="monitoring-controls-bar">
+            <div className="monitoring-controls-group">
+              <div style={{ flex: 1, minWidth: 200 }}>
                 <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
                   SELECT PROTECTED BRAND
                 </label>
@@ -344,7 +338,7 @@ export default function AppMonitoring() {
                   className="form-select"
                   value={selectedBrandId}
                   onChange={(e) => setSelectedBrandId(e.target.value)}
-                  style={{ minWidth: 220, fontWeight: 600 }}
+                  style={{ width: '100%', fontWeight: 600 }}
                 >
                   <option value="all">All Registered Brands ({brands.length})</option>
                   {brands.map(b => (
@@ -354,7 +348,7 @@ export default function AppMonitoring() {
               </div>
 
               <div>
-                <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'transparent', display: 'block', marginBottom: 4 }}>
+                <label className="monitoring-action-label" style={{ fontSize: '0.74rem', fontWeight: 700, color: 'transparent', display: 'block', marginBottom: 4 }}>
                   ACTION
                 </label>
                 <button
@@ -378,7 +372,7 @@ export default function AppMonitoring() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div>
               <button
                 className="btn btn-outline btn-sm"
                 onClick={() => setShowManualForm(!showManualForm)}
@@ -536,8 +530,8 @@ export default function AppMonitoring() {
               </p>
             </div>
 
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <div style={{ position: 'relative', width: 220 }}>
+            <div className="table-filter-toolbar">
+              <div style={{ position: 'relative', minWidth: 200, flex: 1 }}>
                 <Search size={14} style={{ position: 'absolute', left: 10, top: 10, color: 'var(--text-muted)' }} />
                 <input
                   type="text"

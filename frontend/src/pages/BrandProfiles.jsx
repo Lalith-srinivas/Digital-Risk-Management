@@ -385,12 +385,12 @@ export default function BrandProfiles() {
         )}
         {/* Page Top Actions Bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
-          <div style={{ position: 'relative', width: 280 }}>
+          <div style={{ position: 'relative', width: 280, minWidth: 200, flex: '1 1 auto' }}>
             <Search size={15} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }} />
             <input
               type="text"
               className="form-input"
-              style={{ paddingLeft: 36, borderRadius: 999 }}
+              style={{ paddingLeft: 36, borderRadius: 999, width: '100%', boxSizing: 'border-box' }}
               placeholder="Search monitored brands..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -478,7 +478,7 @@ export default function BrandProfiles() {
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="form-grid-2col">
             {/* Brand Name */}
             <div className="form-group">
               <label className="form-label required">Brand Name</label>
@@ -505,7 +505,7 @@ export default function BrandProfiles() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="form-grid-2col">
             {/* Official Website */}
             <div className="form-group">
               <label className="form-label required">Official Website URL</label>
@@ -581,7 +581,7 @@ export default function BrandProfiles() {
             </div>
 
             {formData.officialSocials.map((social, idx) => (
-              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '140px 1fr 140px auto', gap: 8, marginBottom: 8 }}>
+              <div key={idx} className="social-input-row">
                 <select
                   className="form-select"
                   value={social.platform}
@@ -630,7 +630,7 @@ export default function BrandProfiles() {
             </div>
 
             {formData.officialApps.map((app, idx) => (
-              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, marginBottom: 8 }}>
+              <div key={idx} className="app-input-row">
                 <input
                   type="text"
                   className="form-input"

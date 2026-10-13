@@ -82,7 +82,7 @@ export default function Header({
           <Menu size={20} />
         </button>
 
-        <div className="header-title-group">
+        <div className="header-title-group" title={title}>
           <h2>{title}</h2>
           <p>{subtitle}</p>
         </div>
@@ -141,7 +141,8 @@ export default function Header({
               position: 'absolute',
               top: '48px',
               right: '0',
-              width: '320px',
+              width: 'min(320px, calc(100vw - 32px))',
+              maxWidth: 'calc(100vw - 32px)',
               backgroundColor: '#ffffff',
               borderRadius: 'var(--radius-lg)',
               boxShadow: 'var(--shadow-lg)',

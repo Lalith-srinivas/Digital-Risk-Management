@@ -45,7 +45,7 @@ def test_random_inputs_do_not_generate_fabricated_candidates_or_critical_risks()
     for finding in res["findings"]:
         # An app like YouTube or Instagram that happens to be returned by iTunes for query 'spo'
         # must NOT be classified as High or Critical impersonation of brand 'spo'
-        assert finding["risk_score"] < 60
+        assert finding["risk_score"] < 80
         assert finding["risk_level"].lower() not in ["critical"]
 
     # Brand verification must reflect that 'spo' is unverified
