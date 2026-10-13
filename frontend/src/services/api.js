@@ -20,6 +20,12 @@ const DEFAULT_API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.P
 let isBackendLive = false;
 let lastHealthCheck = null;
 
+export function notifyFindingsUpdated() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('soc360:findings_updated'));
+  }
+}
+
 function normalizeFinding(f) {
   if (!f) return null;
   const cand = f.candidate || {};
@@ -284,6 +290,7 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(brandInput)
       });
+      notifyFindingsUpdated();
       return { data, isDemoData: false };
     } catch (err) {
       const { brands, findings, scans } = getStoredDemoData();
@@ -305,6 +312,7 @@ export const api = {
 
       const updatedBrands = [newBrand, ...brands];
       saveStoredDemoData({ brands: updatedBrands, findings, scans });
+      notifyFindingsUpdated();
       return { data: newBrand, isDemoData: true };
     }
   },
@@ -312,12 +320,14 @@ export const api = {
   async deleteBrand(id) {
     try {
       await this.request(`/brands/${id}`, { method: 'DELETE' });
+      notifyFindingsUpdated();
       return { success: true, isDemoData: false };
     } catch (err) {
       const { brands, findings, scans } = getStoredDemoData();
       const updatedBrands = brands.filter(b => b.id !== id);
       const updatedFindings = findings.filter(f => f.brandId !== id);
       saveStoredDemoData({ brands: updatedBrands, findings: updatedFindings, scans });
+      notifyFindingsUpdated();
       return { success: true, isDemoData: true };
     }
   },
@@ -348,6 +358,7 @@ export const api = {
         if (res.data && res.data.length > 0) {
           const brandRes = await this.getBrandById(brandId).catch(() => null);
           const brandName = brandRes?.data?.name || 'Protected Brand';
+          notifyFindingsUpdated();
           return {
             data: {
               brand_id: brandId,
@@ -446,6 +457,7 @@ export const api = {
 
       saveStoredDemoData({ brands, findings: simFindings, scans: [simScan, ...scans] });
 
+      notifyFindingsUpdated();
       return {
         data: {
           brand_id: brandId,
@@ -708,6 +720,7 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(body)
       });
+      notifyFindingsUpdated();
       return { data, isDemoData: false };
     } catch (err) {
       if (!isDemoRequested) {
@@ -756,6 +769,7 @@ export const api = {
 
       saveStoredDemoData({ brands, findings: [newFinding, ...findings], scans: [newScan, ...scans] });
 
+      notifyFindingsUpdated();
       return {
         data: {
           finding: newFinding,
@@ -797,6 +811,7 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(body)
       });
+      notifyFindingsUpdated();
       return { data, isDemoData: false };
     } catch (err) {
       if (!isDemoRequested) {
@@ -847,6 +862,7 @@ export const api = {
 
       saveStoredDemoData({ brands, findings: [newFinding, ...findings], scans: [newScan, ...scans] });
 
+      notifyFindingsUpdated();
       return {
         data: {
           finding: newFinding,
@@ -929,6 +945,7 @@ export const api = {
         method: 'PATCH',
         body: JSON.stringify({ reviewStatus: newStatus, reviewNotes: notes })
       });
+      notifyFindingsUpdated();
       return { data: normalizeFinding(data), isDemoData: false };
     } catch (err) {
       const { brands, findings, scans } = getStoredDemoData();
@@ -945,6 +962,7 @@ export const api = {
       });
       saveStoredDemoData({ brands, findings: updatedFindings, scans });
       const updated = updatedFindings.find(f => f.id === id);
+      notifyFindingsUpdated();
       return { data: normalizeFinding(updated), isDemoData: true };
     }
   },
@@ -959,6 +977,7 @@ export const api = {
       return {
         data: {
           ...data,
+          openFindings: typeof data.openFindings === 'number' ? data.openFindings : (data.suspiciousFindings || 0),
           recentFindings: (data.recentFindings || []).map(normalizeFinding),
         },
         isDemoData: false
@@ -967,9 +986,30 @@ export const api = {
       const { brands, findings, scans } = getStoredDemoData();
 
       const totalBrands = brands.length;
+      if (totalBrands === 0) {
+        return {
+          data: {
+            totalBrands: 0,
+            socialScanned: 0,
+            appsScanned: 0,
+            suspiciousFindings: 0,
+            openFindings: 0,
+            riskCounts: { High: 0, Medium: 0, Low: 0 },
+            sourceCounts: { social: 0, apps: 0, other: 0 },
+            recentFindings: [],
+            recentScans: []
+          },
+          isDemoData: true
+        };
+      }
+
       const socialFindings = findings.filter(f => f.sourceType === 'social').length;
       const appFindings = findings.filter(f => f.sourceType === 'app').length;
       const suspiciousFindings = findings.filter(f => (f.riskScore || 0) >= 60).length;
+      const openFindings = findings.filter(f => {
+        const s = (f.reviewStatus || '').toLowerCase();
+        return s !== 'resolved' && s !== 'false positive';
+      }).length;
 
       const socialScanned = scans.reduce((acc, s) => acc + (s.type?.toLowerCase().includes('social') ? (s.candidatesAnalyzed || 0) : 0), 0) || socialFindings;
       const appsScanned = scans.reduce((acc, s) => acc + (s.type?.toLowerCase().includes('app') ? (s.candidatesAnalyzed || 0) : 0), 0) || appFindings;
@@ -992,6 +1032,7 @@ export const api = {
           socialScanned,
           appsScanned,
           suspiciousFindings,
+          openFindings,
           riskCounts,
           sourceCounts,
           recentFindings: findings.slice(0, 5).map(normalizeFinding),
