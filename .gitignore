@@ -2,7 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
 *.log
+.Python
 
 # Environments & secrets
 .env
@@ -12,6 +14,7 @@ __pycache__/
 venv/
 env/
 ENV/
+.venv/
 
 # Database files
 *.db
