@@ -112,19 +112,11 @@ export default function DataTable({
       </div>
 
       {totalPages > 1 && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '14px 16px',
-          borderTop: '1px solid var(--border-light)',
-          fontSize: '0.78rem',
-          color: 'var(--text-muted)'
-        }}>
-          <div>
+        <div className="table-pagination-footer">
+          <div className="table-pagination-info">
             Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, data.length)} of {data.length} records
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div className="table-pagination-controls">
             <button
               className="btn btn-outline btn-sm"
               disabled={page === 1}

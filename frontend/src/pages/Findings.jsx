@@ -22,29 +22,36 @@ export default function Findings() {
   const navigate = useNavigate();
 
   const [findings, setFindings] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDemo, setIsDemo] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [filterBrand, setFilterBrand] = useState(searchParams.get('brandId') || 'all');
   const [filterRisk, setFilterRisk] = useState('all');
   const [filterSource, setFilterSource] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('date'); // 'date' | 'riskScore'
 
-  const loadFindings = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      const res = await api.getFindings({
-        search: searchQuery,
-        riskLevel: filterRisk,
-        sourceType: filterSource,
-        reviewStatus: filterStatus,
-        sortBy
-      });
+      const [findingsRes, brandsRes] = await Promise.all([
+        api.getFindings({
+          search: searchQuery,
+          brandId: filterBrand,
+          riskLevel: filterRisk,
+          sourceType: filterSource,
+          reviewStatus: filterStatus,
+          sortBy
+        }),
+        api.getBrands()
+      ]);
 
-      setFindings(res.data || []);
-      setIsDemo(res.isDemoData || false);
+      setFindings(findingsRes.data || []);
+      setBrands(brandsRes.data || []);
+      setIsDemo(findingsRes.isDemoData || false);
     } catch (err) {
       console.error(err);
     } finally {
@@ -53,12 +60,14 @@ export default function Findings() {
   };
 
   useEffect(() => {
-    loadFindings();
-  }, [filterRisk, filterSource, filterStatus, sortBy]);
+    loadData();
+  }, [filterBrand, filterRisk, filterSource, filterStatus, sortBy]);
+
+  const loadFindings = () => loadData();
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    loadFindings();
+    loadData();
   };
 
   const columns = [
@@ -213,12 +222,7 @@ export default function Findings() {
           flexDirection: 'column',
           gap: 14
         }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1.5fr repeat(4, 1fr)',
-            gap: 12,
-            alignItems: 'center'
-          }}>
+          <div className="findings-filter-grid">
             {/* Search */}
             <form onSubmit={handleSearchSubmit} style={{ position: 'relative' }}>
               <Search size={15} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }} />
@@ -231,6 +235,18 @@ export default function Findings() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </form>
+
+            {/* Brand Filter */}
+            <select
+              className="form-select"
+              value={filterBrand}
+              onChange={(e) => setFilterBrand(e.target.value)}
+            >
+              <option value="all">All Protected Brands ({brands.length})</option>
+              {brands.map(b => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
 
             {/* Risk Level Filter */}
             <select

@@ -65,8 +65,11 @@ export default function BrandProfiles() {
 
   // Filtered brands
   const filteredBrands = brands.filter(b => {
+    if (!b) return false;
     const q = search.toLowerCase();
-    return b.name.toLowerCase().includes(q) || (b.category && b.category.toLowerCase().includes(q));
+    const nameMatch = b.name ? b.name.toLowerCase().includes(q) : false;
+    const catMatch = b.category ? b.category.toLowerCase().includes(q) : false;
+    return nameMatch || catMatch;
   });
 
   // Dynamic Array Handlers
@@ -136,12 +139,13 @@ export default function BrandProfiles() {
     });
   };
 
+  const [scanningBrandId, setScanningBrandId] = useState(null);
+  const [scanNotification, setScanNotification] = useState('');
+
   const validateForm = () => {
     const errors = {};
     if (!formData.name.trim()) errors.name = 'Brand name is required';
-    if (!formData.website.trim()) {
-      errors.website = 'Official website URL is required';
-    } else if (!/^https?:\/\//i.test(formData.website)) {
+    if (formData.website.trim() && !/^https?:\/\//i.test(formData.website)) {
       errors.website = 'Website must start with http:// or https://';
     }
     setFormErrors(errors);
@@ -164,15 +168,26 @@ export default function BrandProfiles() {
       const payload = {
         name: formData.name.trim(),
         category: formData.category.trim() || 'General Enterprise',
-        website: formData.website.trim(),
-        logo: formData.logo.trim(),
+        website: formData.website.trim() || undefined,
+        logo: formData.logo.trim() || undefined,
         aliases: cleanAliases,
         officialSocials: cleanSocials,
         officialApps: cleanApps,
         developerNames: devList
       };
 
-      await api.createBrand(payload);
+      const res = await api.createBrand(payload);
+      const newBrand = res.data;
+
+      // Start initial monitoring automatically for newly registered brand
+      if (newBrand?.id) {
+        try {
+          await api.scanBrand(newBrand.id);
+        } catch (scanErr) {
+          console.warn('Initial scan error:', scanErr);
+        }
+      }
+
       setSubmitSuccess(true);
       setTimeout(() => {
         setIsAddModalOpen(false);
@@ -205,8 +220,19 @@ export default function BrandProfiles() {
     }
   };
 
-  const handleInitiateScan = (brand) => {
-    navigate(`/social-monitoring?brandId=${brand.id}`);
+  const handleInitiateScan = async (brand) => {
+    setScanningBrandId(brand.id);
+    try {
+      const res = await api.scanBrand(brand.id);
+      const count = res.data?.findings_generated || res.data?.findings?.length || 0;
+      setScanNotification(`Monitoring scan completed for ${brand.name}: ${count} findings evaluated.`);
+      setTimeout(() => setScanNotification(''), 5000);
+      await fetchBrands();
+    } catch (err) {
+      alert(`Monitoring scan failed: ${err.message}`);
+    } finally {
+      setScanningBrandId(null);
+    }
   };
 
   // Columns for DataTable
@@ -232,7 +258,7 @@ export default function BrandProfiles() {
     {
       header: 'Website',
       key: 'website',
-      render: (row) => (
+      render: (row) => row.website ? (
         <a
           href={row.website}
           target="_blank"
@@ -240,9 +266,11 @@ export default function BrandProfiles() {
           style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 600 }}
           onClick={(e) => e.stopPropagation()}
         >
-          <span>{row.website.replace(/^https?:\/\//, '')}</span>
+          <span>{(row.website || '').replace(/^https?:\/\//, '')}</span>
           <ExternalLink size={12} />
         </a>
+      ) : (
+        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>—</span>
       )
     },
     {
@@ -313,10 +341,11 @@ export default function BrandProfiles() {
           <button
             className="btn btn-primary btn-sm"
             onClick={() => handleInitiateScan(row)}
+            disabled={scanningBrandId === row.id}
             title="Initiate Impersonation Scan"
           >
             <Play size={12} fill="#fff" />
-            <span>Scan</span>
+            <span>{scanningBrandId === row.id ? 'Scanning...' : 'Start Monitoring'}</span>
           </button>
 
           <button
@@ -337,14 +366,31 @@ export default function BrandProfiles() {
       <DemoBanner isDemo={isDemo} />
 
       <div className="page-content">
+        {scanNotification && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '12px 18px',
+            backgroundColor: '#ecfdf5',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid #a7f3d0',
+            color: '#047857',
+            fontSize: '0.84rem',
+            marginBottom: 16
+          }}>
+            <CheckCircle size={18} />
+            <span>{scanNotification}</span>
+          </div>
+        )}
         {/* Page Top Actions Bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
-          <div style={{ position: 'relative', width: 280 }}>
+          <div style={{ position: 'relative', width: 280, minWidth: 200, flex: '1 1 auto' }}>
             <Search size={15} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }} />
             <input
               type="text"
               className="form-input"
-              style={{ paddingLeft: 36, borderRadius: 999 }}
+              style={{ paddingLeft: 36, borderRadius: 999, width: '100%', boxSizing: 'border-box' }}
               placeholder="Search monitored brands..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -432,7 +478,7 @@ export default function BrandProfiles() {
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="form-grid-2col">
             {/* Brand Name */}
             <div className="form-group">
               <label className="form-label required">Brand Name</label>
@@ -459,7 +505,7 @@ export default function BrandProfiles() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="form-grid-2col">
             {/* Official Website */}
             <div className="form-group">
               <label className="form-label required">Official Website URL</label>
@@ -535,7 +581,7 @@ export default function BrandProfiles() {
             </div>
 
             {formData.officialSocials.map((social, idx) => (
-              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '140px 1fr 140px auto', gap: 8, marginBottom: 8 }}>
+              <div key={idx} className="social-input-row">
                 <select
                   className="form-select"
                   value={social.platform}
@@ -584,7 +630,7 @@ export default function BrandProfiles() {
             </div>
 
             {formData.officialApps.map((app, idx) => (
-              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, marginBottom: 8 }}>
+              <div key={idx} className="app-input-row">
                 <input
                   type="text"
                   className="form-input"
@@ -624,7 +670,7 @@ export default function BrandProfiles() {
               className="btn btn-primary"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Registering...' : 'Save Brand Profile'}
+              {isSubmitting ? 'Registering & Initiating Monitoring...' : 'Save Brand & Start Monitoring'}
             </button>
           </div>
         </form>
@@ -666,14 +712,16 @@ export default function BrandProfiles() {
             <div>
               <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)' }}>{selectedBrand.name}</h2>
               <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{selectedBrand.category} • Monitored since {formatDate(selectedBrand.lastScan)}</p>
-              <a
-                href={selectedBrand.website}
-                target="_blank"
-                rel="noreferrer"
-                style={{ fontSize: '0.78rem', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}
-              >
-                {selectedBrand.website} <ExternalLink size={12} />
-              </a>
+              {selectedBrand.website && (
+                <a
+                  href={selectedBrand.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: '0.78rem', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 4 }}
+                >
+                  {(selectedBrand.website || '').replace(/^https?:\/\//, '')} <ExternalLink size={12} />
+                </a>
+              )}
             </div>
           </div>
 

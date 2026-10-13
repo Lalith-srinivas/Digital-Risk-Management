@@ -7,15 +7,21 @@ from app.schemas.brand import BrandCreate, BrandUpdate
 
 class BrandService:
     @staticmethod
-    def get_by_id(db: Session, brand_id: uuid.UUID) -> Optional[Brand]:
-        return db.query(Brand).filter(Brand.id == brand_id).first()
+    def get_by_id(db: Session, brand_id: uuid.UUID, user_id: Optional[uuid.UUID] = None) -> Optional[Brand]:
+        q = db.query(Brand).filter(Brand.id == brand_id)
+        if user_id:
+            q = q.filter((Brand.user_id == user_id) | (Brand.user_id.is_(None)))
+        return q.first()
 
     @staticmethod
-    def list_brands(db: Session, skip: int = 0, limit: int = 100) -> List[Brand]:
-        return db.query(Brand).order_by(Brand.created_at.desc()).offset(skip).limit(limit).all()
+    def list_brands(db: Session, skip: int = 0, limit: int = 100, user_id: Optional[uuid.UUID] = None) -> List[Brand]:
+        q = db.query(Brand)
+        if user_id:
+            q = q.filter(Brand.user_id == user_id)
+        return q.order_by(Brand.created_at.desc()).offset(skip).limit(limit).all()
 
     @staticmethod
-    def create_brand(db: Session, brand_in: BrandCreate) -> Brand:
+    def create_brand(db: Session, brand_in: BrandCreate, user_id: Optional[uuid.UUID] = None) -> Brand:
         db_brand = Brand(
             name=brand_in.name,
             website=brand_in.website,
@@ -24,6 +30,7 @@ class BrandService:
             official_apps=brand_in.official_apps or [],
             official_developers=brand_in.official_developers or [],
             aliases=brand_in.aliases or [],
+            user_id=user_id,
         )
         db.add(db_brand)
         db.commit()
@@ -31,8 +38,11 @@ class BrandService:
         return db_brand
 
     @staticmethod
-    def update_brand(db: Session, brand_id: uuid.UUID, brand_in: BrandUpdate) -> Optional[Brand]:
-        brand = db.query(Brand).filter(Brand.id == brand_id).first()
+    def update_brand(db: Session, brand_id: uuid.UUID, brand_in: BrandUpdate, user_id: Optional[uuid.UUID] = None) -> Optional[Brand]:
+        q = db.query(Brand).filter(Brand.id == brand_id)
+        if user_id:
+            q = q.filter(Brand.user_id == user_id)
+        brand = q.first()
         if not brand:
             return None
 
@@ -45,8 +55,11 @@ class BrandService:
         return brand
 
     @staticmethod
-    def delete_brand(db: Session, brand_id: uuid.UUID) -> bool:
-        brand = db.query(Brand).filter(Brand.id == brand_id).first()
+    def delete_brand(db: Session, brand_id: uuid.UUID, user_id: Optional[uuid.UUID] = None) -> bool:
+        q = db.query(Brand).filter(Brand.id == brand_id)
+        if user_id:
+            q = q.filter(Brand.user_id == user_id)
+        brand = q.first()
         if not brand:
             return False
 

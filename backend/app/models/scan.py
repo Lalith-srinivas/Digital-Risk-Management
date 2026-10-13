@@ -22,6 +22,7 @@ class Scan(Base):
     findings_created: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True, index=True)
 
     brand = relationship("Brand", back_populates="scans")
     findings = relationship("Finding", back_populates="scan")

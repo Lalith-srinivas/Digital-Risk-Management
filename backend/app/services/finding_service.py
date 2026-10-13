@@ -21,13 +21,15 @@ ALLOWED_REVIEW_STATUSES = {
 
 class FindingService:
     @staticmethod
-    def get_by_id(db: Session, finding_id: uuid.UUID) -> Optional[Finding]:
-        return (
+    def get_by_id(db: Session, finding_id: uuid.UUID, user_id: Optional[uuid.UUID] = None) -> Optional[Finding]:
+        query = (
             db.query(Finding)
             .options(joinedload(Finding.candidate))
             .filter(Finding.id == finding_id)
-            .first()
         )
+        if user_id:
+            query = query.filter((Finding.user_id == user_id) | (Finding.user_id.is_(None)))
+        return query.first()
 
     @staticmethod
     def list_findings(
@@ -41,9 +43,12 @@ class FindingService:
         sort_dir: str = "desc",
         page: int = 1,
         page_size: int = 20,
+        user_id: Optional[uuid.UUID] = None,
     ) -> Tuple[List[Finding], int]:
         query = db.query(Finding).options(joinedload(Finding.candidate))
 
+        if user_id:
+            query = query.filter(Finding.user_id == user_id)
         if brand_id:
             query = query.filter(Finding.brand_id == brand_id)
         if source_type:

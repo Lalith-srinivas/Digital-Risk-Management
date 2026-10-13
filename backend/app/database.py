@@ -10,7 +10,7 @@ connect_args = {}
 if db_url.startswith("sqlite"):
     connect_args["check_same_thread"] = False
 elif "postgres" in db_url:
-    # Disable prepared statements for Supabase PgBouncer / Transaction pooler compatibility
+    # Disable prepared statements for Supabase / PgBouncer transaction pooler compatibility
     connect_args["prepare_threshold"] = None
 
 engine = create_engine(

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
-from typing import List, Optional, Any
-from pydantic import BaseModel, Field, HttpUrl, ConfigDict
+from typing import List, Optional, Any, Union, Dict
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 
 class BrandBase(BaseModel):
@@ -12,6 +12,40 @@ class BrandBase(BaseModel):
     official_apps: List[Any] = Field(default_factory=list, description="List of official app identifiers or details")
     official_developers: List[str] = Field(default_factory=list, description="List of verified official developer names")
     aliases: List[str] = Field(default_factory=list, description="Known brand aliases and abbreviations")
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_frontend_fields(cls, values: Any) -> Any:
+        if not isinstance(values, dict):
+            return values
+
+        # Normalize logo / logo_url
+        if "logo" in values and "logo_url" not in values:
+            values["logo_url"] = values["logo"]
+
+        # Normalize official_developers / developerNames
+        if "developerNames" in values and "official_developers" not in values:
+            values["official_developers"] = values["developerNames"]
+
+        # Normalize official_social_urls / officialSocials
+        if "officialSocials" in values and "official_social_urls" not in values:
+            socials = values["officialSocials"]
+            extracted = []
+            if isinstance(socials, list):
+                for item in socials:
+                    if isinstance(item, str):
+                        extracted.append(item)
+                    elif isinstance(item, dict):
+                        url = item.get("url") or item.get("handle")
+                        if url:
+                            extracted.append(str(url))
+            values["official_social_urls"] = extracted
+
+        # Normalize official_apps / officialApps
+        if "officialApps" in values and "official_apps" not in values:
+            values["official_apps"] = values["officialApps"]
+
+        return values
 
 
 class BrandCreate(BrandBase):
@@ -32,5 +66,9 @@ class BrandResponse(BrandBase):
     id: uuid.UUID
     created_at: datetime
     updated_at: datetime
+
+    @property
+    def logo(self) -> Optional[str]:
+        return self.logo_url
 
     model_config = ConfigDict(from_attributes=True)

@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
+import { ShieldAlert } from 'lucide-react';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import LandingPage from './pages/LandingPage';
+import BrandScan from './pages/BrandScan';
+import ScanResults from './pages/ScanResults';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import BrandProfiles from './pages/BrandProfiles';
 import SocialMonitoring from './pages/SocialMonitoring';
@@ -12,13 +20,21 @@ import Settings from './pages/Settings';
 
 // Metadata mapping for Header
 const PAGE_META = {
-  '/': {
+  '/dashboard': {
     title: 'SOC 360 Security Overview',
     subtitle: 'Continuous digital risk analysis and candidate impersonation detection'
   },
   '/brands': {
     title: 'Monitored Brand Profiles',
     subtitle: 'Manage protected corporate assets, official handles, and mobile applications'
+  },
+  '/scan': {
+    title: 'Brand Surveillance Scan',
+    subtitle: 'Initiate automated multi-channel brand impersonation discovery'
+  },
+  '/scan-results': {
+    title: 'Threat Surveillance Results',
+    subtitle: 'Review detected candidate profiles, similarity scores, and evidence signals'
   },
   '/social-monitoring': {
     title: 'Social Media Impersonation Monitoring',
@@ -33,16 +49,18 @@ const PAGE_META = {
     subtitle: 'Review, triage, and escalate detected digital brand impersonation alerts'
   },
   '/settings': {
-    title: 'Platform & API Settings',
-    subtitle: 'Configure backend connections, detection sensitivity, and system preferences'
+    title: 'Profile & Account Settings',
+    subtitle: 'Manage analyst identity, security credentials, and platform preferences'
   }
 };
 
-function AppLayout() {
+/**
+ * Main Authenticated Platform Layout
+ */
+function AppLayout({ children }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Dynamic header meta
   let meta = PAGE_META[location.pathname];
   if (!meta) {
     if (location.pathname.startsWith('/findings/')) {
@@ -75,18 +93,8 @@ function AppLayout() {
             onToggleMobile={() => setMobileOpen(prev => !prev)}
           />
 
-          <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/brands" element={<BrandProfiles />} />
-              <Route path="/social-monitoring" element={<SocialMonitoring />} />
-              <Route path="/app-monitoring" element={<AppMonitoring />} />
-              <Route path="/findings" element={<Findings />} />
-              <Route path="/findings/:id" element={<FindingDetails />} />
-              <Route path="/settings" element={<Settings />} />
-              {/* Fallback route */}
-              <Route path="*" element={<Dashboard />} />
-            </Routes>
+          <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, width: '100%', maxWidth: '100%' }}>
+            {children}
           </main>
         </div>
       </div>
@@ -94,10 +102,193 @@ function AppLayout() {
   );
 }
 
+/**
+ * Root Route Component:
+ * Unauthenticated visitors see the public Landing Page.
+ * Authenticated users see the security Dashboard.
+ */
+function RootRoute() {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading SOC 360...</div>;
+  }
+  if (!user) {
+    return <LandingPage />;
+  }
+  return (
+    <AppLayout>
+      <Dashboard />
+    </AppLayout>
+  );
+}
+
+/**
+ * Protected Route wrapper:
+ * Redirects to /login if unauthenticated.
+ */
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
+  }
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  return <AppLayout>{children}</AppLayout>;
+}
+
+/**
+ * Scan Flow wrapper:
+ * Accessible to both Guests and Authenticated users.
+ */
+function ScanFlowLayout({ children }) {
+  const { user } = useAuth();
+  if (user) {
+    return <AppLayout>{children}</AppLayout>;
+  }
+  // Guest view: clean standalone layout with floating navbar
+  return (
+    <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
+      <style>{`
+        .guest-floating-navbar {
+          position: sticky;
+          top: 14px;
+          margin: 14px auto 10px;
+          width: min(1140px, calc(100% - 32px));
+          z-index: 100;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 22px;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.88);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(226, 232, 240, 0.9);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), 0 1px 1px rgba(255, 255, 255, 0.8) inset;
+          transition: all 0.25s ease;
+        }
+        .guest-flow-main {
+          flex: 1;
+          padding: 16px;
+        }
+        @media (max-width: 640px) {
+          .guest-floating-navbar {
+            top: 8px;
+            margin: 8px auto 6px;
+            width: calc(100% - 20px);
+            padding: 8px 12px;
+          }
+          .guest-flow-main {
+            padding: 8px 6px;
+          }
+          .guest-scan-badge {
+            display: none !important;
+          }
+          .guest-nav-btn {
+            padding: 6px 11px !important;
+            font-size: 12px !important;
+          }
+        }
+        @media (max-width: 420px) {
+          .guest-floating-navbar {
+            top: 6px;
+            margin: 6px auto 4px;
+            width: calc(100% - 14px);
+            padding: 6px 8px;
+            gap: 4px;
+          }
+          .guest-logo-icon {
+            width: 28px !important;
+            height: 28px !important;
+          }
+          .guest-logo-text {
+            font-size: 14px !important;
+          }
+          .guest-nav-actions {
+            gap: 4px !important;
+          }
+          .guest-nav-btn {
+            padding: 5px 8px !important;
+            font-size: 11px !important;
+          }
+        }
+      `}</style>
+      <header className="guest-floating-navbar">
+        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+          <div className="guest-logo-icon" style={{
+            width: '34px',
+            height: '34px',
+            borderRadius: '10px',
+            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            flexShrink: 0,
+            boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)',
+          }}>
+            <ShieldAlert size={17} />
+          </div>
+          <span className="guest-logo-text" style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.3px', whiteSpace: 'nowrap' }}>SOC 360</span>
+          <span className="guest-scan-badge" style={{ fontSize: '11px', color: '#4f46e5', fontWeight: '700', background: '#e0e7ff', border: '1px solid #c7d2fe', padding: '2px 8px', borderRadius: '12px', whiteSpace: 'nowrap' }}>
+            Guest Scan
+          </span>
+        </Link>
+        <div className="guest-nav-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+          <Link
+            to="/login"
+            className="guest-nav-btn"
+            style={{ fontSize: '13px', fontWeight: '600', color: '#475569', textDecoration: 'none', padding: '7px 16px', borderRadius: 9999, background: 'rgba(241, 245, 249, 0.85)', border: '1px solid #e2e8f0', transition: 'all 0.15s ease' }}
+          >
+            Sign In
+          </Link>
+          <Link
+            to="/register"
+            className="guest-nav-btn"
+            style={{ fontSize: '13px', fontWeight: '600', color: '#ffffff', textDecoration: 'none', padding: '7px 18px', borderRadius: 9999, background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)', boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)', transition: 'all 0.15s ease' }}
+          >
+            Create Account
+          </Link>
+        </div>
+      </header>
+      <main className="guest-flow-main">
+        {children}
+      </main>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <AppLayout />
+      <AuthProvider>
+        <Routes>
+          {/* Public Root: Landing Page for guests, Dashboard for auth users */}
+          <Route path="/" element={<RootRoute />} />
+
+          {/* Public Auth Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+
+          {/* Brand Scan & Results (Available to both Guest and Authenticated users) */}
+          <Route path="/scan" element={<ScanFlowLayout><BrandScan /></ScanFlowLayout>} />
+          <Route path="/scan-results" element={<ScanFlowLayout><ScanResults /></ScanFlowLayout>} />
+
+          {/* Protected Account-Mode Routes */}
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/brands" element={<ProtectedRoute><BrandProfiles /></ProtectedRoute>} />
+          <Route path="/social-monitoring" element={<ProtectedRoute><SocialMonitoring /></ProtectedRoute>} />
+          <Route path="/app-monitoring" element={<ProtectedRoute><AppMonitoring /></ProtectedRoute>} />
+          <Route path="/findings" element={<ProtectedRoute><Findings /></ProtectedRoute>} />
+          <Route path="/findings/:id" element={<ProtectedRoute><FindingDetails /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
+          {/* Fallback route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

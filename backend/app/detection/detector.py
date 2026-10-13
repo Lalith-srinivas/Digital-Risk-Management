@@ -10,6 +10,7 @@ or synthetic demo fixtures. Operates offline without external scraping or paid A
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List, Optional, Union
 
 from .explanations import build_explanation
@@ -143,6 +144,27 @@ def analyze_social_candidate(
         product_names=b_data["products"],
     )
 
+    # 4b. Evaluate high-risk triggers vs benign fan/community signals
+    text_corpus = f"{display_name or ''} {username or ''} {candidate_bio or ''}".lower()
+    suspicious_phishing_words = [
+        "support", "helpdesk", "verify", "verification", "recovery", "login",
+        "signin", "auth", "billing", "giveaway", "reward", "crypto", "tokens",
+        "airdrop", "unlocked", "credentials", "claim"
+    ]
+    community_fan_words = [
+        "fan", "fans", "fanpage", "fanclub", "community", "unofficial",
+        "parody", "club", "enthusiast", "enthusiasts", "tribute"
+    ]
+    has_suspicious_keywords = any(
+        re.search(r"\b" + re.escape(w) + r"\b", text_corpus)
+        for w in suspicious_phishing_words
+    )
+    has_fan_keywords = any(
+        re.search(r"\b" + re.escape(w) + r"\b", text_corpus)
+        for w in community_fan_words
+    )
+    is_fan_page = has_fan_keywords and not has_suspicious_keywords
+
     # 5. Risk scoring
     scorer = RiskScorer(config)
     assessment: RiskAssessment = scorer.calculate_risk(
@@ -151,6 +173,8 @@ def analyze_social_candidate(
         description_signal=desc_signal,
         developer_signal=None,  # Not applicable for social profiles
         official_url_signal=url_signal,
+        has_suspicious_keywords=has_suspicious_keywords,
+        is_fan_page=is_fan_page,
     )
 
     # 6. Build final explanation
@@ -246,6 +270,26 @@ def analyze_app_candidate(
         product_names=b_data["products"],
     )
 
+    # 5b. Evaluate high-risk triggers vs benign utility/companion signals
+    app_text = f"{app_name or ''} {developer or ''} {candidate_desc or ''}".lower()
+    suspicious_app_words = [
+        "unlocked", "mod", "hack", "crack", "free coins", "reward",
+        "direct gateway", "credentials", "stealer", "bypass"
+    ]
+    community_app_words = [
+        "fan", "fans", "guide", "companion", "unofficial", "community",
+        "tips", "tribute", "enthusiast"
+    ]
+    has_suspicious_keywords = any(
+        re.search(r"\b" + re.escape(w) + r"\b", app_text)
+        for w in suspicious_app_words
+    )
+    has_fan_keywords = any(
+        re.search(r"\b" + re.escape(w) + r"\b", app_text)
+        for w in community_app_words
+    )
+    is_fan_page = has_fan_keywords and not has_suspicious_keywords
+
     # 6. Risk scoring
     scorer = RiskScorer(config)
     assessment: RiskAssessment = scorer.calculate_risk(
@@ -254,6 +298,8 @@ def analyze_app_candidate(
         description_signal=desc_signal,
         developer_signal=dev_signal,
         official_url_signal=url_signal,
+        has_suspicious_keywords=has_suspicious_keywords,
+        is_fan_page=is_fan_page,
     )
 
     # 7. Explanation

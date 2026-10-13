@@ -1,7 +1,13 @@
 import os
 from typing import List, Union
+from dotenv import load_dotenv
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Load .env into os.environ for connectors and external services
+load_dotenv()
+load_dotenv("backend/.env")
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
 
 
 class Settings(BaseSettings):
@@ -14,6 +20,12 @@ class Settings(BaseSettings):
     SUPABASE_URL: str = ""
     SUPABASE_ANON_KEY: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
+
+    # External surveillance connectors credentials
+    TELEGRAM_BOT_TOKEN: str = ""
+    SERPER_API_KEY: str = ""
+    SERPAPI_API_KEY: str = ""
+    GITHUB_TOKEN: str = ""
 
     # CORS Configuration
     CORS_ORIGINS: Union[str, List[str]] = (
