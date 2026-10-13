@@ -32,10 +32,15 @@ export async function signUpUser(email, password, fullName = '') {
     return { data: { user: mockUser, session: mockSession }, error: null };
   }
 
+  const redirectUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/dashboard`
+    : undefined;
+
   return await supabase.auth.signUp({
     email,
     password,
     options: {
+      emailRedirectTo: redirectUrl,
       data: {
         full_name: fullName,
       },
