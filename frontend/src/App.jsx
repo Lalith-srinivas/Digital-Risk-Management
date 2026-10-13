@@ -93,7 +93,7 @@ function AppLayout({ children }) {
             onToggleMobile={() => setMobileOpen(prev => !prev)}
           />
 
-          <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, width: '100%', maxWidth: '100%' }}>
             {children}
           </main>
         </div>

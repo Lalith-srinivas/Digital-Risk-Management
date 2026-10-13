@@ -606,6 +606,9 @@
   flex-direction: column;
   gap: 24px;
   flex: 1;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 @media (max-width: 900px) {
@@ -627,27 +630,29 @@
    ========================================== */
 .stat-cards-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
+  min-width: 0;
+  width: 100%;
 }
 
 @media (max-width: 1200px) {
   .stat-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
   }
 }
 
 @media (max-width: 640px) {
   .stat-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
 }
 
 @media (max-width: 380px) {
   .stat-cards-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 10px;
   }
 }
@@ -780,13 +785,16 @@
    ========================================== */
 .dashboard-columns {
   display: grid;
-  grid-template-columns: 1.65fr 1fr;
+  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
   gap: 22px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 @media (max-width: 1100px) {
   .dashboard-columns {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -794,6 +802,9 @@
   display: flex;
   flex-direction: column;
   gap: 22px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* ==========================================
@@ -805,6 +816,10 @@
   border-radius: var(--radius-lg);
   padding: 22px;
   box-shadow: var(--shadow-card);
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 @media (max-width: 640px) {
@@ -1017,16 +1032,42 @@
    ========================================== */
 .table-responsive {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   border-radius: var(--radius-sm);
+  touch-action: pan-x pan-y;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.table-responsive::-webkit-scrollbar {
+  height: 5px;
+}
+.table-responsive::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .data-table {
   width: 100%;
-  min-width: 620px;
+  min-width: 640px;
   border-collapse: collapse;
   text-align: left;
+}
+
+.data-table th,
+.data-table td {
+  white-space: nowrap;
 }
 
 .data-table th {
@@ -1695,7 +1736,10 @@
 /* Threat Activity Chart Container */
 .chart-container-threat {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: 260px;
+  position: relative;
 }
 
 @media (max-width: 640px) {

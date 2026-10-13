@@ -188,7 +188,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div>
+    <div style={{ minWidth: 0, width: '100%', maxWidth: '100%' }}>
       <DemoBanner isDemo={isDemo} />
 
       {/* Monitor New Brand Modal Dialog */}
