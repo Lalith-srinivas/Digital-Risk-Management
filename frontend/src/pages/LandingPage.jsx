@@ -22,6 +22,8 @@ export default function LandingPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#ffffff', color: '#0f172a', display: 'flex', flexDirection: 'column' }}>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Rubik+Glitch&display=swap');
+
         .floating-navbar {
           position: fixed;
           top: 16px;
@@ -720,10 +722,11 @@ export default function LandingPage() {
           <h1
             className="hero-title-main"
             style={{
+              fontFamily: "'Rubik Glitch', system-ui, -apple-system, sans-serif",
               fontSize: '54px',
-              fontWeight: '800',
-              lineHeight: '1.15',
-              letterSpacing: '-1px',
+              fontWeight: '400',
+              lineHeight: '1.2',
+              letterSpacing: '1px',
               color: '#ffffff',
               marginBottom: '20px',
               textShadow: '0 2px 20px rgba(0, 0, 0, 0.7)',
