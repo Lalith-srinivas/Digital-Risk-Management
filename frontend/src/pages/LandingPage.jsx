@@ -21,7 +21,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div style={{ minHeight: '100vh', background: '#ffffff', color: '#0f172a', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: '#0a0a0f', color: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rubik+Glitch&display=swap');
 
@@ -143,9 +143,9 @@ export default function LandingPage() {
 
         /* Mind Map / Hub-and-Spoke Workflow Design */
         .mindmap-section {
-          background: #fbfbfa;
-          border-top: 1px solid #e2e8f0;
-          border-bottom: 1px solid #e2e8f0;
+          background: #0a0a0f;
+          border-top: 1px solid rgba(255,255,255,0.07);
+          border-bottom: 1px solid rgba(255,255,255,0.07);
           padding: 68px 24px 60px;
           position: relative;
           overflow: hidden;
@@ -154,7 +154,7 @@ export default function LandingPage() {
         .mindmap-bg-grid {
           position: absolute;
           inset: 0;
-          background-image: radial-gradient(rgba(148, 163, 184, 0.22) 1px, transparent 1px);
+          background-image: radial-gradient(rgba(129, 140, 248, 0.12) 1px, transparent 1px);
           background-size: 26px 26px;
           pointer-events: none;
         }
@@ -169,14 +169,14 @@ export default function LandingPage() {
         .mindmap-heading {
           font-size: 30px;
           font-weight: 800;
-          color: #0f172a;
+          color: #f8fafc;
           margin-bottom: 12px;
           letter-spacing: -0.5px;
         }
 
         .mindmap-subheading {
           font-size: 15px;
-          color: #64748b;
+          color: #94a3b8;
           max-width: 640px;
           margin: 0 auto;
           line-height: 1.6;
@@ -201,15 +201,15 @@ export default function LandingPage() {
         }
 
         .mindmap-card {
-          background: #ffffff;
-          border: 1px solid #e2e8f0;
+          background: #13131a;
+          border: 1px solid rgba(255,255,255,0.09);
           border-radius: 16px;
           padding: 18px 20px;
           display: flex;
           align-items: center;
           gap: 16px;
           text-align: left;
-          box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05), 0 2px 4px rgba(15, 23, 42, 0.03);
+          box-shadow: 0 4px 24px rgba(0,0,0,0.4);
           transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
           position: relative;
           cursor: default;
@@ -1318,14 +1318,15 @@ export default function LandingPage() {
         marginTop: 'auto',
         padding: '36px 24px',
         textAlign: 'center',
-        background: '#ffffff',
+        background: '#0a0a0f',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
       }}>
         <div style={{
           maxWidth: '800px',
           margin: '0 auto 20px',
           padding: '14px 20px',
-          background: '#f8fafc',
-          border: '1px solid #e2e8f0',
+          background: '#13131a',
+          border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '8px',
           fontSize: '12px',
           color: '#64748b',
