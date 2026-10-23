@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   Shield,
 } from 'lucide-react';
-import XylophoneHelix from '../components/XylophoneHelix';
+
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -631,7 +631,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section with Interactive Xylophone Helix Background */}
+      {/* Hero Section */}
       <section style={{
         position: 'relative',
         overflow: 'hidden',
@@ -644,44 +644,31 @@ export default function LandingPage() {
         justifyContent: 'center',
         boxSizing: 'border-box',
       }}>
-        {/* Interactive 3D Xylophone Helix Canvas Background */}
+        {/* Layered gradient background */}
         <div style={{
           position: 'absolute',
           inset: 0,
-          width: '100%',
-          height: '100%',
+          background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(79, 70, 229, 0.28) 0%, transparent 70%), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(192, 132, 252, 0.12) 0%, transparent 60%), #03050c',
           zIndex: 0,
-          pointerEvents: 'auto',
-        }}>
-          <XylophoneHelix
-            background="#03050c"
-            baseColor="#FFF3F3"
-            bars={44}
-            shape="helix"
-            torusRadius={1.38}
-            tubeRadius={0.64}
-            speed={100}
-            drag={100}
-            scale={420}
-            hover={{
-              glow: 48,
-              tint: 47,
-              colors: ["#FFF9F9", "#0012FF", "#060146"],
-              strength: 184,
-            }}
-            camera={{ tilt: 54, sideTilt: 78 }}
-            width="100%"
-            height="100%"
-          />
-        </div>
-
-        {/* Ambient Radial Vignette for Content Contrast */}
+        }} />
+        {/* Subtle dot-grid overlay */}
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: 'radial-gradient(circle at 50% 50%, rgba(3, 5, 12, 0.38) 0%, rgba(3, 5, 12, 0.88) 88%)',
+          backgroundImage: 'radial-gradient(rgba(129,140,248,0.15) 1px, transparent 1px)',
+          backgroundSize: '36px 36px',
           pointerEvents: 'none',
           zIndex: 1,
+          maskImage: 'radial-gradient(ellipse 90% 70% at 50% 40%, black 30%, transparent 80%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 90% 70% at 50% 40%, black 30%, transparent 80%)',
+        }} />
+        {/* Bottom vignette */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(circle at 50% 50%, transparent 30%, rgba(3,5,12,0.75) 90%)',
+          pointerEvents: 'none',
+          zIndex: 2,
         }} />
 
 
