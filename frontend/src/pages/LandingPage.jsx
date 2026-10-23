@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   Shield,
 } from 'lucide-react';
-
+import WireframeGlobe from '../components/WireframeGlobe';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -138,6 +138,50 @@ export default function LandingPage() {
           .hero-desc-main {
             font-size: 15px !important;
             margin-bottom: 24px !important;
+          }
+        }
+
+        /* Hero split layout */
+        .hero-split {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          max-width: 1180px;
+          margin: 0 auto;
+          padding: 120px 48px 80px;
+          gap: 0;
+          box-sizing: border-box;
+        }
+        .hero-left {
+          flex: 1;
+          min-width: 0;
+          text-align: left;
+          pointer-events: auto;
+          z-index: 3;
+        }
+        .hero-right {
+          flex: 0 0 500px;
+          width: 500px;
+          height: 500px;
+          z-index: 3;
+          pointer-events: auto;
+        }
+        @media (max-width: 900px) {
+          .hero-split {
+            flex-direction: column;
+            padding: 100px 20px 60px;
+            text-align: center;
+            gap: 24px;
+          }
+          .hero-left {
+            text-align: center;
+          }
+          .hero-right {
+            flex: 0 0 320px;
+            width: 320px;
+            height: 320px;
           }
         }
 
@@ -293,7 +337,7 @@ export default function LandingPage() {
         .mindmap-card-title {
           font-size: 15px;
           font-weight: 700;
-          color: #0f172a;
+          color: #f1f5f9;
           margin-bottom: 4px;
           display: flex;
           align-items: center;
@@ -312,7 +356,7 @@ export default function LandingPage() {
 
         .mindmap-card-desc {
           font-size: 12.5px;
-          color: #64748b;
+          color: #94a3b8;
           line-height: 1.5;
           margin: 0;
         }
@@ -673,124 +717,124 @@ export default function LandingPage() {
 
 
         {/* Hero Content Container */}
-        <div
-          className="hero-content-box"
-          style={{
-            position: 'relative',
-            zIndex: 3,
-            maxWidth: '1100px',
-            width: '100%',
-            margin: 'auto 0',
-            padding: '120px 24px 64px',
-            textAlign: 'center',
-            pointerEvents: 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'rgba(99, 102, 241, 0.18)',
-            border: '1px solid rgba(129, 140, 248, 0.35)',
-            padding: '6px 16px',
-            borderRadius: '20px',
-            fontSize: '13px',
-            fontWeight: '600',
-            color: '#c7d2fe',
-            marginBottom: '24px',
-            backdropFilter: 'blur(8px)',
-          }}>
-            <Sparkles size={16} /> Autonomous Brand Surveillance & Threat Detection
-          </div>
-
-          <h1
-            className="hero-title-main"
-            style={{
-              fontFamily: "'Rubik Glitch', system-ui, -apple-system, sans-serif",
-              fontSize: '54px',
-              fontWeight: '400',
-              lineHeight: '1.2',
-              letterSpacing: '1px',
-              color: '#ffffff',
-              marginBottom: '20px',
-              textShadow: '0 2px 20px rgba(0, 0, 0, 0.7)',
-            }}
-          >
-            Protect Your Brand Across the <br />
-            <span style={{
-              background: 'linear-gradient(135deg, #818cf8 0%, #c084fc 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+        {/* Hero Content: Left text + Right globe */}
+        <div className="hero-split" style={{ position: 'relative', zIndex: 3 }}>
+          {/* LEFT: Text content */}
+          <div className="hero-left">
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(99, 102, 241, 0.18)',
+              border: '1px solid rgba(129, 140, 248, 0.35)',
+              padding: '6px 16px',
+              borderRadius: '20px',
+              fontSize: '13px',
+              fontWeight: '600',
+              color: '#c7d2fe',
+              marginBottom: '24px',
+              backdropFilter: 'blur(8px)',
             }}>
-              Digital World
-            </span>
-          </h1>
+              <Sparkles size={16} /> Autonomous Brand Surveillance &amp; Threat Detection
+            </div>
 
-          <p
-            className="hero-desc-main"
-            style={{
-              fontSize: '19px',
-              color: '#cbd5e1',
-              maxWidth: '720px',
-              margin: '0 auto 36px',
-              lineHeight: '1.6',
-              textShadow: '0 1px 10px rgba(0, 0, 0, 0.6)',
-            }}
-          >
-            Identify potential brand impersonation across social media and application marketplaces using explainable risk analysis.
-          </p>
-
-          {/* Action CTAs */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap', pointerEvents: 'auto' }}>
-            <button
-              onClick={() => navigate('/scan')}
+            <h1
+              className="hero-title-main"
               style={{
-                padding: '14px 32px',
-                fontSize: '16px',
-                fontWeight: '700',
+                fontFamily: "'Rubik Glitch', system-ui, -apple-system, sans-serif",
+                fontSize: '54px',
+                fontWeight: '400',
+                lineHeight: '1.2',
+                letterSpacing: '1px',
                 color: '#ffffff',
-                background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
-                border: 'none',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                boxShadow: '0 8px 24px rgba(79, 70, 229, 0.45)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                marginBottom: '20px',
+                textShadow: '0 2px 20px rgba(0, 0, 0, 0.7)',
               }}
             >
-              Start Monitoring <ArrowRight size={18} />
-            </button>
+              Protect Your Brand<br />Across the{' '}
+              <span style={{
+                background: 'linear-gradient(135deg, #818cf8 0%, #c084fc 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}>
+                Digital World
+              </span>
+            </h1>
 
-            <button
-              onClick={() => navigate('/login')}
+            <p
+              className="hero-desc-main"
               style={{
-                padding: '14px 28px',
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#f8fafc',
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.25)',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                backdropFilter: 'blur(8px)',
-                transition: 'background 0.15s ease',
+                fontSize: '18px',
+                color: '#cbd5e1',
+                maxWidth: '520px',
+                margin: '0 0 36px',
+                lineHeight: '1.6',
+                textShadow: '0 1px 10px rgba(0, 0, 0, 0.6)',
               }}
             >
-              <Lock size={16} /> Sign In
-            </button>
+              Identify potential brand impersonation across social media and
+              application marketplaces using explainable risk analysis.
+            </p>
+
+            {/* CTAs */}
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => navigate('/scan')}
+                style={{
+                  padding: '14px 32px',
+                  fontSize: '16px',
+                  fontWeight: '700',
+                  color: '#ffffff',
+                  background: 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)',
+                  border: 'none',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 24px rgba(79, 70, 229, 0.45)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                }}
+              >
+                Start Monitoring <ArrowRight size={18} />
+              </button>
+              <button
+                onClick={() => navigate('/login')}
+                style={{
+                  padding: '14px 28px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#f8fafc',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  backdropFilter: 'blur(8px)',
+                  transition: 'background 0.15s ease',
+                }}
+              >
+                <Lock size={16} /> Sign In
+              </button>
+            </div>
+
+            <div style={{ marginTop: '20px', fontSize: '13px', color: '#94a3b8' }}>
+              <span style={{ fontWeight: '600', color: '#a5b4fc' }}>No account required</span> for guest brand scans • In-memory privacy guaranteed
+            </div>
           </div>
 
-          <div style={{ marginTop: '20px', fontSize: '13px', color: '#94a3b8' }}>
-            <span style={{ fontWeight: '600', color: '#a5b4fc' }}>No account required</span> for guest brand scans • In-memory privacy guaranteed
+          {/* RIGHT: Wireframe Globe */}
+          <div className="hero-right">
+            <WireframeGlobe
+              speed={40}
+              size={460}
+              lines={28}
+              weather={100}
+              background="transparent"
+              lineColor="#818CF8"
+            />
           </div>
         </div>
 
