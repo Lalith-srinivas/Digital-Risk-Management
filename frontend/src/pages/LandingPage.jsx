@@ -15,7 +15,8 @@ import {
   ShieldCheck,
   Shield,
 } from 'lucide-react';
-import WireframeGlobe from '../components/WireframeGlobe';
+import StippleSphere from '../components/StippleSphere';
+
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -825,15 +826,25 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* RIGHT: Wireframe Globe */}
+          {/* RIGHT: Stipple Sphere */}
           <div className="hero-right">
-            <WireframeGlobe
-              speed={40}
-              size={460}
-              lines={28}
-              weather={100}
+            <StippleSphere
+              size={480}
+              rows={60}
+              dotSize={52}
+              speed={4}
+              hover={6}
+              ripple={6}
+              burst={4}
+              seaDots={20}
+              farSide={22}
               background="transparent"
-              lineColor="#818CF8"
+              color={{
+                mode: "gradient",
+                colors: ["#818CF8", "#6366f1", "#c084fc"],
+                glow: "#a5b4fc",
+                seaColor: "#0f0c29",
+              }}
             />
           </div>
         </div>
