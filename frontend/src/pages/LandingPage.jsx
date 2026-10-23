@@ -168,11 +168,14 @@ export default function LandingPage() {
           height: 500px;
           z-index: 3;
           pointer-events: auto;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         @media (max-width: 900px) {
           .hero-split {
             flex-direction: column;
-            padding: 100px 20px 60px;
+            padding: 100px 20px 50px;
             text-align: center;
             gap: 24px;
           }
@@ -180,9 +183,30 @@ export default function LandingPage() {
             text-align: center;
           }
           .hero-right {
-            flex: 0 0 320px;
-            width: 320px;
-            height: 320px;
+            flex: 0 0 300px;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto;
+          }
+        }
+        @media (max-width: 640px) {
+          .hero-split {
+            padding: 85px 16px 36px !important;
+            gap: 16px;
+          }
+          .hero-right {
+            flex: 0 0 250px;
+            width: 250px;
+            height: 250px;
+            margin: 0 auto;
+          }
+        }
+        @media (max-width: 380px) {
+          .hero-right {
+            flex: 0 0 210px;
+            width: 210px;
+            height: 210px;
+            margin: 0 auto;
           }
         }
 

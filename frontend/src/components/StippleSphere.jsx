@@ -377,7 +377,10 @@ export default function StippleSphere(props) {
       M = sphereFromView(yaw, pitch);
 
       const cx = W / 2, cy = H / 2;
-      R = Math.max(20, (p.size ?? DEFAULTS.size) / 2);
+      const containerMin = Math.min(W, H);
+      const maxFit = containerMin > 40 ? containerMin * 0.88 : (p.size ?? DEFAULTS.size);
+      const targetSize = p.size ? Math.min(p.size, maxFit) : maxFit;
+      R = Math.max(20, targetSize / 2);
 
       const hk = Math.max(0, p.hover ?? DEFAULTS.hover) / 5;
       const pv = over && !dragging ? viewPoint(px, py) : null;
