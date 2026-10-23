@@ -13,6 +13,7 @@ import {
   Zap,
   Eye,
   ShieldCheck,
+  Shield,
 } from 'lucide-react';
 import XylophoneHelix from '../components/XylophoneHelix';
 
@@ -845,136 +846,292 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Primary Feature Grid */}
-      <section style={{
-        maxWidth: '1100px',
-        margin: '0 auto',
-        padding: '32px 24px 64px',
-      }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '20px',
-        }}>
-          {/* Card 1 */}
-          <div style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '12px',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-            textAlign: 'left',
+      {/* Primary Feature Bento Grid */}
+      <section style={{ background: '#0a0a0f', padding: '80px 24px 90px' }}>
+        <style>{`
+          .bento-section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(99,102,241,0.12);
+            border: 1px solid rgba(129,140,248,0.25);
+            color: #818cf8;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 5px 14px;
+            border-radius: 9999px;
+            margin-bottom: 20px;
+          }
+          .bento-grid {
+            max-width: 1120px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 18px;
+          }
+          .bento-card {
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+          }
+          .bento-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+          }
+
+          /* Card 1 – spans 2 cols, horizontal text+image */
+          .bento-card-1 {
+            grid-column: 1 / 3;
+            grid-row: 1 / 2;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            border: 1px solid rgba(129,140,248,0.2);
+            display: flex;
+            flex-direction: row;
+            min-height: 320px;
+          }
+
+          /* Card 2 – right col top */
+          .bento-card-2 {
+            grid-column: 3 / 4;
+            grid-row: 1 / 2;
+            background: linear-gradient(135deg, #1a0a2e 0%, #3d1050 100%);
+            border: 1px solid rgba(192,132,252,0.2);
+            display: flex;
+            flex-direction: column;
+            min-height: 320px;
+          }
+
+          /* Card 3 – left col bottom */
+          .bento-card-3 {
+            grid-column: 1 / 2;
+            grid-row: 2 / 3;
+            background: linear-gradient(135deg, #0d1117 0%, #1a2535 100%);
+            border: 1px solid rgba(251,191,36,0.2);
+            display: flex;
+            flex-direction: column;
+            min-height: 300px;
+          }
+
+          /* Card 4 – spans 2 cols bottom right, horizontal text+image */
+          .bento-card-4 {
+            grid-column: 2 / 4;
+            grid-row: 2 / 3;
+            background: linear-gradient(135deg, #021c12 0%, #042a1c 50%, #062415 100%);
+            border: 1px solid rgba(52,211,153,0.2);
+            display: flex;
+            flex-direction: row-reverse;
+            min-height: 300px;
+          }
+
+          .bento-text-block {
+            padding: 32px 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            flex-shrink: 0;
+            max-width: 340px;
+          }
+
+          .bento-text-block-full {
+            padding: 26px 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            flex: 1;
+          }
+
+          .bento-img-block {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+          }
+
+          .bento-img-block img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top left;
+            border-radius: 0 16px 16px 0;
+            opacity: 0.92;
+            transition: opacity 0.25s ease, transform 0.35s ease;
+          }
+          .bento-card-4 .bento-img-block img {
+            border-radius: 16px 0 0 16px;
+            object-position: top right;
+          }
+          .bento-card:hover .bento-img-block img {
+            opacity: 1;
+            transform: scale(1.03);
+          }
+
+          .bento-step-num {
+            font-size: 42px;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 4px;
+            font-variant-numeric: tabular-nums;
+            opacity: 0.18;
+          }
+          .bento-cat-tag {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            opacity: 0.85;
+          }
+          .bento-title {
+            font-size: 20px;
+            font-weight: 800;
+            line-height: 1.25;
+            margin-bottom: 10px;
+            color: #f8fafc;
+          }
+          .bento-desc {
+            font-size: 13px;
+            line-height: 1.65;
+            color: rgba(248,250,252,0.6);
+          }
+
+          /* Mobile: single column */
+          @media (max-width: 768px) {
+            .bento-grid {
+              grid-template-columns: 1fr;
+              grid-template-rows: auto;
+            }
+            .bento-card-1, .bento-card-2, .bento-card-3, .bento-card-4 {
+              grid-column: 1 / 2;
+              grid-row: auto;
+              flex-direction: column;
+              min-height: unset;
+            }
+            .bento-text-block {
+              max-width: 100%;
+            }
+            .bento-img-block {
+              height: 200px;
+            }
+            .bento-img-block img {
+              border-radius: 0 0 16px 16px !important;
+              object-position: top center;
+            }
+            .bento-card-4 .bento-img-block img {
+              border-radius: 0 0 16px 16px !important;
+            }
+          }
+        `}</style>
+
+        {/* Section header */}
+        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+          <div className="bento-section-label">
+            <Shield size={12} /> Core Capabilities
+          </div>
+          <h2 style={{
+            fontSize: 'clamp(26px, 4vw, 38px)',
+            fontWeight: '800',
+            color: '#f8fafc',
+            letterSpacing: '-0.5px',
+            marginBottom: '12px',
           }}>
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '8px',
-              background: '#e0e7ff',
-              color: '#4338ca',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '16px',
-            }}>
-              <Share2 size={22} />
+            Everything You Need to Protect Your Brand
+          </h2>
+          <p style={{ fontSize: '15px', color: '#94a3b8', maxWidth: '540px', margin: '0 auto', lineHeight: '1.6' }}>
+            Four interconnected capabilities that turn raw digital signals into clear, actionable brand intelligence.
+          </p>
+        </div>
+
+        {/* Bento Grid */}
+        <div className="bento-grid">
+
+          {/* Card 1 – Social Impersonation (2-col wide) */}
+          <div className="bento-card bento-card-1">
+            <div className="bento-text-block">
+              <div className="bento-step-num" style={{ color: '#818cf8' }}>01</div>
+              <div className="bento-cat-tag" style={{ color: '#818cf8' }}>DETECT</div>
+              <h3 className="bento-title">Social Impersonation Detection</h3>
+              <p className="bento-desc">
+                Detect rogue handles, typosquats, unicode homoglyphs, and fake VIP profiles across X, Telegram, and Instagram using RapidFuzz lexical matching.
+              </p>
             </div>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#1e293b', marginBottom: '8px' }}>
-              Social Impersonation Detection
-            </h3>
-            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>
-              Detect rogue handles, typosquats, unicode homoglyphs, and fake VIP profiles across X, Telegram, and Instagram using RapidFuzz lexical matching.
-            </p>
+            <div className="bento-img-block">
+              <img src="/social_card.jpg" alt="Social threat monitor dashboard" />
+            </div>
           </div>
 
-          {/* Card 2 */}
-          <div style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '12px',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-            textAlign: 'left',
-          }}>
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '8px',
-              background: '#fdf4ff',
-              color: '#a21caf',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '16px',
-            }}>
-              <Smartphone size={22} />
+          {/* Card 2 – App Store (right col top) */}
+          <div className="bento-card bento-card-2">
+            <div className="bento-text-block-full">
+              <div className="bento-step-num" style={{ color: '#c084fc' }}>02</div>
+              <div className="bento-cat-tag" style={{ color: '#c084fc' }}>SURVEIL</div>
+              <h3 className="bento-title">Application Store Surveillance</h3>
+              <p className="bento-desc">
+                Uncover deceptive app listings, cloned APKs, publisher mismatches, and repackaged trojans mimicking your brand on mobile marketplaces.
+              </p>
             </div>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#1e293b', marginBottom: '8px' }}>
-              Application Store Surveillance
-            </h3>
-            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>
-              Uncover deceptive app listings, cloned APKs, publisher mismatches, and repackaged trojans mimicking your brand on mobile marketplaces.
-            </p>
+            <div style={{ padding: '0 16px 20px', flex: 'none' }}>
+              <img
+                src="/appstore_card.jpg"
+                alt="App store surveillance dashboard"
+                style={{
+                  width: '100%',
+                  borderRadius: '12px',
+                  objectFit: 'cover',
+                  height: '140px',
+                  opacity: 0.88,
+                  transition: 'opacity 0.25s ease, transform 0.35s ease',
+                }}
+              />
+            </div>
           </div>
 
-          {/* Card 3 */}
-          <div style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '12px',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-            textAlign: 'left',
-          }}>
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '8px',
-              background: '#fef3c7',
-              color: '#b45309',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '16px',
-            }}>
-              <Zap size={22} />
+          {/* Card 3 – Risk Scoring (left col bottom) */}
+          <div className="bento-card bento-card-3">
+            <div className="bento-text-block-full">
+              <div className="bento-step-num" style={{ color: '#fbbf24' }}>03</div>
+              <div className="bento-cat-tag" style={{ color: '#fbbf24' }}>ANALYZE</div>
+              <h3 className="bento-title">Explainable Risk Scoring</h3>
+              <p className="bento-desc">
+                Transparent priorities (0–100) based on perceptual ImageHash visual marks, token ratios, and developer verification—no black-box guesswork.
+              </p>
             </div>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#1e293b', marginBottom: '8px' }}>
-              Explainable Risk Scoring
-            </h3>
-            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>
-              Transparent review priorities (0–100) based on perceptual ImageHash visual marks, token ratios, and developer verification—no black-box guesswork.
-            </p>
+            <div style={{ padding: '0 16px 20px', flex: 'none' }}>
+              <img
+                src="/risk_card.jpg"
+                alt="Risk scoring analytics dashboard"
+                style={{
+                  width: '100%',
+                  borderRadius: '12px',
+                  objectFit: 'cover',
+                  height: '120px',
+                  opacity: 0.88,
+                  transition: 'opacity 0.25s ease, transform 0.35s ease',
+                }}
+              />
+            </div>
           </div>
 
-          {/* Card 4 */}
-          <div style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '12px',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-            textAlign: 'left',
-          }}>
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '8px',
-              background: '#ecfdf5',
-              color: '#047857',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '16px',
-            }}>
-              <FileText size={22} />
+          {/* Card 4 – Reports (2-col wide, flipped) */}
+          <div className="bento-card bento-card-4">
+            <div className="bento-text-block">
+              <div className="bento-step-num" style={{ color: '#34d399' }}>04</div>
+              <div className="bento-cat-tag" style={{ color: '#34d399' }}>EXPORT</div>
+              <h3 className="bento-title">Downloadable Scan Reports</h3>
+              <p className="bento-desc">
+                Instantly export audit-ready PDF Threat Dossiers and CSV spreadsheets for takedown requests, brand legal teams, and executive briefings.
+              </p>
             </div>
-            <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#1e293b', marginBottom: '8px' }}>
-              Downloadable Scan Reports
-            </h3>
-            <p style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.5' }}>
-              Instantly export audit-ready PDF Threat Dossiers and CSV spreadsheets for takedown requests, brand legal teams, and executive briefings.
-            </p>
+            <div className="bento-img-block">
+              <img src="/reports_card.jpg" alt="Brand threat dossier report" />
+            </div>
           </div>
+
         </div>
       </section>
 
