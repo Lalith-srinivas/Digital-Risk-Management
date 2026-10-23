@@ -310,15 +310,8 @@ export default function LandingPage() {
         .mindmap-card-desc {
           font-size: 12.5px;
           color: #64748b;
-          line-height: 1.45;
+          line-height: 1.5;
           margin: 0;
-        }
-
-        .desc-mobile {
-          display: none;
-        }
-        .desc-full {
-          display: inline;
         }
 
         /* Center Stage with Connectors and Hub */
@@ -536,15 +529,10 @@ export default function LandingPage() {
             border-radius: 4px;
           }
           .mindmap-card-desc {
-            font-size: 8.5px;
-            line-height: 1.25;
+            font-size: 9.5px;
+            line-height: 1.4;
+            color: #64748b;
             margin: 0;
-          }
-          .desc-full {
-            display: none !important;
-          }
-          .desc-mobile {
-            display: inline !important;
           }
           .mindmap-col-left .mindmap-card::after {
             width: 5px;
@@ -1015,8 +1003,7 @@ export default function LandingPage() {
                     <span className="mindmap-card-step-badge" style={{ background: '#ffedd5', color: '#c2410c' }}>01</span>
                   </div>
                   <p className="mindmap-card-desc">
-                    <span className="desc-full">Enter trademark name & official domains to anchor the ground-truth baseline without manual URLs.</span>
-                    <span className="desc-mobile">Enter trademark & domains for baseline.</span>
+                    Enter trademark name &amp; official domains to anchor the authentic ground-truth baseline without manual URLs.
                   </p>
                 </div>
               </div>
@@ -1032,8 +1019,7 @@ export default function LandingPage() {
                     <span className="mindmap-card-step-badge" style={{ background: '#ecfccb', color: '#4d7c0f' }}>02</span>
                   </div>
                   <p className="mindmap-card-desc">
-                    <span className="desc-full">Simultaneous automated discovery across social handles (X, Telegram, IG) and mobile app stores.</span>
-                    <span className="desc-mobile">Simultaneous social & app store discovery.</span>
+                    Simultaneous automated surveillance across social platforms (X, Telegram, IG) and mobile app stores.
                   </p>
                 </div>
               </div>
@@ -1155,8 +1141,7 @@ export default function LandingPage() {
                     <span className="mindmap-card-step-badge" style={{ background: '#dcfce7', color: '#15803d' }}>03</span>
                   </div>
                   <p className="mindmap-card-desc">
-                    <span className="desc-full">Deep algorithmic matching with RapidFuzz lexical analysis and ImageHash perceptual logo comparison.</span>
-                    <span className="desc-mobile">RapidFuzz lexical & ImageHash logo scoring.</span>
+                    Deep algorithmic scoring with RapidFuzz lexical analysis and ImageHash perceptual logo comparison.
                   </p>
                 </div>
               </div>
@@ -1172,8 +1157,7 @@ export default function LandingPage() {
                     <span className="mindmap-card-step-badge" style={{ background: '#fee2e2', color: '#b91c1c' }}>04</span>
                   </div>
                   <p className="mindmap-card-desc">
-                    <span className="desc-full">Review evidence dossiers, confirm suspicious threats, and export audit-ready PDF/CSV reports.</span>
-                    <span className="desc-mobile">Review dossiers & export audit reports.</span>
+                    Review explainable evidence dossiers, confirm suspicious threats, and export audit-ready PDF/CSV reports.
                   </p>
                 </div>
               </div>
