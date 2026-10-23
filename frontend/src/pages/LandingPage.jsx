@@ -163,19 +163,38 @@ export default function LandingPage() {
           z-index: 1;
         }
 
-        .mindmap-desktop {
+        .mindmap-heading {
+          font-size: 30px;
+          font-weight: 800;
+          color: #0f172a;
+          margin-bottom: 12px;
+          letter-spacing: -0.5px;
+        }
+
+        .mindmap-subheading {
+          font-size: 15px;
+          color: #64748b;
+          max-width: 640px;
+          margin: 0 auto;
+          line-height: 1.6;
+        }
+
+        /* Unified Board Layout for Laptop & Mobile */
+        .mindmap-board {
           display: flex;
-          align-items: center;
+          align-items: stretch;
           justify-content: center;
           gap: 0px;
           margin-top: 36px;
+          width: 100%;
         }
 
         .mindmap-col {
           width: 320px;
           display: flex;
           flex-direction: column;
-          gap: 48px;
+          justify-content: space-between;
+          gap: 40px;
         }
 
         .mindmap-card {
@@ -197,6 +216,37 @@ export default function LandingPage() {
           transform: translateY(-3px);
           box-shadow: 0 12px 28px -4px rgba(15, 23, 42, 0.1), 0 4px 8px rgba(15, 23, 42, 0.04);
           border-color: #cbd5e1;
+        }
+
+        /* Anchor dots on cards connecting to the lines */
+        .mindmap-col-left .mindmap-card::after {
+          content: '';
+          position: absolute;
+          right: -5px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 9px;
+          height: 9px;
+          border-radius: 50%;
+          background: #0f172a;
+          border: 2px solid #ffffff;
+          box-shadow: 0 0 0 1px #94a3b8;
+          z-index: 3;
+        }
+
+        .mindmap-col-right .mindmap-card::after {
+          content: '';
+          position: absolute;
+          left: -5px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 9px;
+          height: 9px;
+          border-radius: 50%;
+          background: #0f172a;
+          border: 2px solid #ffffff;
+          box-shadow: 0 0 0 1px #94a3b8;
+          z-index: 3;
         }
 
         .mindmap-card-icon-wrap {
@@ -245,6 +295,7 @@ export default function LandingPage() {
           display: flex;
           align-items: center;
           justify-content: space-between;
+          gap: 6px;
         }
 
         .mindmap-card-step-badge {
@@ -253,6 +304,7 @@ export default function LandingPage() {
           padding: 2px 7px;
           border-radius: 6px;
           letter-spacing: 0.5px;
+          flex-shrink: 0;
         }
 
         .mindmap-card-desc {
@@ -260,6 +312,13 @@ export default function LandingPage() {
           color: #64748b;
           line-height: 1.45;
           margin: 0;
+        }
+
+        .desc-mobile {
+          display: none;
+        }
+        .desc-full {
+          display: inline;
         }
 
         /* Center Stage with Connectors and Hub */
@@ -309,6 +368,12 @@ export default function LandingPage() {
           animation: hexPulse 3.5s ease-in-out infinite;
         }
 
+        .mindmap-hex-svg {
+          width: 140px;
+          height: 154px;
+          display: block;
+        }
+
         @keyframes hexPulse {
           0%, 100% {
             filter: drop-shadow(0 8px 18px rgba(234, 88, 12, 0.22));
@@ -343,6 +408,7 @@ export default function LandingPage() {
           align-items: center;
           gap: 6px;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+          white-space: nowrap;
         }
 
         .mindmap-hub-badge-dot {
@@ -360,21 +426,173 @@ export default function LandingPage() {
           letter-spacing: 0.5px;
         }
 
-        /* Mobile Mind Map Layout */
-        .mindmap-mobile {
-          display: none;
-          flex-direction: column;
-          align-items: center;
-          gap: 20px;
-          margin-top: 28px;
+        /* Tablet Responsive (641px to 960px) */
+        @media (max-width: 960px) and (min-width: 641px) {
+          .mindmap-col {
+            flex: 1;
+            max-width: 270px;
+            gap: 28px;
+          }
+          .mindmap-card {
+            padding: 12px 14px;
+            gap: 12px;
+            border-radius: 14px;
+          }
+          .mindmap-card-icon-wrap {
+            width: 38px;
+            height: 38px;
+          }
+          .mindmap-card-title {
+            font-size: 13px;
+          }
+          .mindmap-card-desc {
+            font-size: 11px;
+            line-height: 1.35;
+          }
+          .mindmap-center-stage {
+            width: 170px;
+          }
+          .mindmap-svg-connector {
+            width: 45px;
+            height: 220px;
+          }
+          .mindmap-hexagon-wrap, .mindmap-hex-svg {
+            width: 80px;
+            height: 88px;
+          }
+          .mindmap-radar-ring {
+            width: 105px;
+            height: 105px;
+          }
+          .mindmap-hub-badge {
+            margin-top: 8px;
+            padding: 3px 8px;
+          }
+          .mindmap-hub-badge-text {
+            font-size: 9.5px;
+          }
         }
 
-        @media (max-width: 900px) {
-          .mindmap-desktop {
-            display: none;
+        /* Mobile Responsive (<= 640px): Keeps exact Mind Map layout */
+        @media (max-width: 640px) {
+          .mindmap-section {
+            padding: 36px 8px 32px;
           }
-          .mindmap-mobile {
+          .mindmap-heading {
+            font-size: 20px !important;
+            letter-spacing: -0.3px;
+            margin-bottom: 6px !important;
+          }
+          .mindmap-subheading {
+            font-size: 12px !important;
+            line-height: 1.4 !important;
+            margin-bottom: 14px !important;
+            padding: 0 8px;
+          }
+          .mindmap-board {
+            margin-top: 12px;
             display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+          }
+          .mindmap-col {
+            width: auto;
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 12px;
+          }
+          .mindmap-card {
+            padding: 8px 8px;
+            border-radius: 11px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+            min-height: 56px;
+          }
+          .mindmap-card-icon-wrap {
+            width: 22px;
+            height: 22px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+          }
+          .mindmap-card-icon-wrap svg {
+            width: 12px;
+            height: 12px;
+          }
+          .mindmap-card-title {
+            font-size: 10.5px;
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 2px;
+            width: 100%;
+          }
+          .mindmap-card-step-badge {
+            font-size: 8px;
+            padding: 1px 4px;
+            border-radius: 4px;
+          }
+          .mindmap-card-desc {
+            font-size: 8.5px;
+            line-height: 1.25;
+            margin: 0;
+          }
+          .desc-full {
+            display: none !important;
+          }
+          .desc-mobile {
+            display: inline !important;
+          }
+          .mindmap-col-left .mindmap-card::after {
+            width: 5px;
+            height: 5px;
+            right: -3px;
+            border-width: 1px;
+          }
+          .mindmap-col-right .mindmap-card::after {
+            width: 5px;
+            height: 5px;
+            left: -3px;
+            border-width: 1px;
+          }
+          .mindmap-center-stage {
+            width: 76px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+          }
+          .mindmap-svg-connector {
+            width: 16px;
+            height: 100% !important;
+            display: block;
+            flex-shrink: 0;
+          }
+          .mindmap-hexagon-wrap, .mindmap-hex-svg {
+            width: 44px;
+            height: 49px;
+          }
+          .mindmap-radar-ring {
+            width: 58px;
+            height: 58px;
+          }
+          .mindmap-hub-badge {
+            margin-top: 5px;
+            padding: 2px 6px;
+            gap: 3.5px;
+            border-radius: 6px;
+          }
+          .mindmap-hub-badge-dot {
+            width: 4px;
+            height: 4px;
+          }
+          .mindmap-hub-badge-text {
+            font-size: 7px;
+            letter-spacing: 0.2px;
           }
         }
       `}</style>
@@ -769,27 +987,27 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Monitoring Workflow Steps - Mind Map / Hub-and-Spoke Design */}
+      {/* Monitoring Workflow Steps - Unified Mind Map / Hub-and-Spoke Design */}
       <section className="mindmap-section">
         <div className="mindmap-bg-grid" />
         <div className="mindmap-container">
-          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '30px', fontWeight: '800', color: '#0f172a', marginBottom: '12px', letterSpacing: '-0.5px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+            <h2 className="mindmap-heading">
               Brand-First Monitoring Workflow
             </h2>
-            <p style={{ fontSize: '15px', color: '#64748b', maxWidth: '640px', margin: '0 auto', lineHeight: '1.6' }}>
+            <p className="mindmap-subheading">
               No manual URL submission required. Register or select your brand, and SOC 360 handles the entire reconnaissance cycle.
             </p>
           </div>
 
-          {/* Desktop Mind Map View */}
-          <div className="mindmap-desktop">
+          {/* Unified Board: 2 Left Cards, Center Hexagon, 2 Right Cards */}
+          <div className="mindmap-board">
             {/* Left Column (Steps 01 & 02) */}
-            <div className="mindmap-col">
+            <div className="mindmap-col mindmap-col-left">
               {/* Card 01 - Register Brand */}
               <div className="mindmap-card">
                 <div className="mindmap-card-icon-wrap mindmap-icon-orange-1">
-                  <Eye size={22} />
+                  <Eye size={22} className="mindmap-card-icon" />
                 </div>
                 <div className="mindmap-card-content">
                   <div className="mindmap-card-title">
@@ -797,7 +1015,8 @@ export default function LandingPage() {
                     <span className="mindmap-card-step-badge" style={{ background: '#ffedd5', color: '#c2410c' }}>01</span>
                   </div>
                   <p className="mindmap-card-desc">
-                    Enter trademark name & official domains to anchor the ground-truth baseline without manual URLs.
+                    <span className="desc-full">Enter trademark name & official domains to anchor the ground-truth baseline without manual URLs.</span>
+                    <span className="desc-mobile">Enter trademark & domains for baseline.</span>
                   </p>
                 </div>
               </div>
@@ -805,7 +1024,7 @@ export default function LandingPage() {
               {/* Card 02 - Auto-Scan Vectors */}
               <div className="mindmap-card">
                 <div className="mindmap-card-icon-wrap mindmap-icon-green-1">
-                  <Zap size={22} />
+                  <Zap size={22} className="mindmap-card-icon" />
                 </div>
                 <div className="mindmap-card-content">
                   <div className="mindmap-card-title">
@@ -813,7 +1032,8 @@ export default function LandingPage() {
                     <span className="mindmap-card-step-badge" style={{ background: '#ecfccb', color: '#4d7c0f' }}>02</span>
                   </div>
                   <p className="mindmap-card-desc">
-                    Simultaneous automated discovery across social handles (X, Telegram, IG) and mobile app stores.
+                    <span className="desc-full">Simultaneous automated discovery across social handles (X, Telegram, IG) and mobile app stores.</span>
+                    <span className="desc-mobile">Simultaneous social & app store discovery.</span>
                   </p>
                 </div>
               </div>
@@ -822,37 +1042,30 @@ export default function LandingPage() {
             {/* Center Stage with SVG Connectors & Central Hexagon Hub */}
             <div className="mindmap-center-stage">
               {/* Left Connector SVG */}
-              <svg className="mindmap-svg-connector" viewBox="0 0 85 270" fill="none">
-                {/* Top-Left Curve */}
+              <svg className="mindmap-svg-connector" viewBox="0 0 100 280" preserveAspectRatio="none" fill="none">
                 <path
-                  d="M 0 58 L 12 58 C 48 58, 62 98, 85 98"
+                  d="M 0 70 C 45 70, 65 115, 100 115"
                   stroke="#94a3b8"
                   strokeWidth="1.8"
                   strokeDasharray="4 4"
+                  vectorEffect="non-scaling-stroke"
                   className="mindmap-path"
                 />
-                {/* Anchor dot for Card 01 */}
-                <circle cx="12" cy="58" r="4.5" fill="#0f172a" />
-                <circle cx="12" cy="58" r="2" fill="#ffffff" />
-
-                {/* Bottom-Left Curve */}
                 <path
-                  d="M 0 212 L 12 212 C 48 212, 62 172, 85 172"
+                  d="M 0 210 C 45 210, 65 165, 100 165"
                   stroke="#94a3b8"
                   strokeWidth="1.8"
                   strokeDasharray="4 4"
+                  vectorEffect="non-scaling-stroke"
                   className="mindmap-path"
                 />
-                {/* Anchor dot for Card 02 */}
-                <circle cx="12" cy="212" r="4.5" fill="#0f172a" />
-                <circle cx="12" cy="212" r="2" fill="#ffffff" />
               </svg>
 
               {/* Central Hexagon Hub */}
               <div className="mindmap-hub-container">
                 <div className="mindmap-hexagon-wrap">
                   <div className="mindmap-radar-ring" />
-                  <svg width="140" height="154" viewBox="0 0 140 154" fill="none">
+                  <svg className="mindmap-hex-svg" viewBox="0 0 140 154" fill="none">
                     <defs>
                       <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor="#111827" />
@@ -864,7 +1077,6 @@ export default function LandingPage() {
                       </linearGradient>
                     </defs>
 
-                    {/* Outer Hexagon */}
                     <polygon
                       points="70,5 135,40 135,114 70,149 5,114 5,40"
                       fill="url(#hexGrad)"
@@ -873,7 +1085,6 @@ export default function LandingPage() {
                       strokeLinejoin="round"
                     />
 
-                    {/* Inner Dashed Hexagon */}
                     <polygon
                       points="70,14 126,45 126,109 70,140 14,109 14,45"
                       fill="none"
@@ -883,7 +1094,6 @@ export default function LandingPage() {
                       strokeLinejoin="round"
                     />
 
-                    {/* Stylized Cyber Shield / Core Emblem */}
                     <g transform="translate(42, 48)">
                       <path
                         d="M 28 6 L 48 18 L 48 40 L 28 52 L 8 40 L 8 18 Z"
@@ -912,39 +1122,32 @@ export default function LandingPage() {
               </div>
 
               {/* Right Connector SVG */}
-              <svg className="mindmap-svg-connector" viewBox="0 0 85 270" fill="none">
-                {/* Top-Right Curve */}
+              <svg className="mindmap-svg-connector" viewBox="0 0 100 280" preserveAspectRatio="none" fill="none">
                 <path
-                  d="M 0 98 C 23 98, 37 58, 73 58 L 85 58"
+                  d="M 0 115 C 35 115, 55 70, 100 70"
                   stroke="#94a3b8"
                   strokeWidth="1.8"
                   strokeDasharray="4 4"
+                  vectorEffect="non-scaling-stroke"
                   className="mindmap-path"
                 />
-                {/* Anchor dot for Card 03 */}
-                <circle cx="73" cy="58" r="4.5" fill="#0f172a" />
-                <circle cx="73" cy="58" r="2" fill="#ffffff" />
-
-                {/* Bottom-Right Curve */}
                 <path
-                  d="M 0 172 C 23 172, 37 212, 73 212 L 85 212"
+                  d="M 0 165 C 35 165, 55 210, 100 210"
                   stroke="#94a3b8"
                   strokeWidth="1.8"
                   strokeDasharray="4 4"
+                  vectorEffect="non-scaling-stroke"
                   className="mindmap-path"
                 />
-                {/* Anchor dot for Card 04 */}
-                <circle cx="73" cy="212" r="4.5" fill="#0f172a" />
-                <circle cx="73" cy="212" r="2" fill="#ffffff" />
               </svg>
             </div>
 
             {/* Right Column (Steps 03 & 04) */}
-            <div className="mindmap-col">
+            <div className="mindmap-col mindmap-col-right">
               {/* Card 03 - Similarity Analysis */}
               <div className="mindmap-card">
                 <div className="mindmap-card-icon-wrap mindmap-icon-green-2">
-                  <Search size={22} />
+                  <Search size={22} className="mindmap-card-icon" />
                 </div>
                 <div className="mindmap-card-content">
                   <div className="mindmap-card-title">
@@ -952,7 +1155,8 @@ export default function LandingPage() {
                     <span className="mindmap-card-step-badge" style={{ background: '#dcfce7', color: '#15803d' }}>03</span>
                   </div>
                   <p className="mindmap-card-desc">
-                    Deep algorithmic matching with RapidFuzz lexical analysis and ImageHash perceptual logo comparison.
+                    <span className="desc-full">Deep algorithmic matching with RapidFuzz lexical analysis and ImageHash perceptual logo comparison.</span>
+                    <span className="desc-mobile">RapidFuzz lexical & ImageHash logo scoring.</span>
                   </p>
                 </div>
               </div>
@@ -960,7 +1164,7 @@ export default function LandingPage() {
               {/* Card 04 - Triage Findings */}
               <div className="mindmap-card">
                 <div className="mindmap-card-icon-wrap mindmap-icon-orange-2">
-                  <ShieldCheck size={22} />
+                  <ShieldCheck size={22} className="mindmap-card-icon" />
                 </div>
                 <div className="mindmap-card-content">
                   <div className="mindmap-card-title">
@@ -968,123 +1172,11 @@ export default function LandingPage() {
                     <span className="mindmap-card-step-badge" style={{ background: '#fee2e2', color: '#b91c1c' }}>04</span>
                   </div>
                   <p className="mindmap-card-desc">
-                    Review evidence dossiers, confirm suspicious threats, and export audit-ready PDF/CSV reports.
+                    <span className="desc-full">Review evidence dossiers, confirm suspicious threats, and export audit-ready PDF/CSV reports.</span>
+                    <span className="desc-mobile">Review dossiers & export audit reports.</span>
                   </p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Mobile Mind Map View */}
-          <div className="mindmap-mobile">
-            <div className="mindmap-hub-container" style={{ marginBottom: '8px' }}>
-              <div className="mindmap-hexagon-wrap" style={{ transform: 'scale(0.85)' }}>
-                <svg width="140" height="154" viewBox="0 0 140 154" fill="none">
-                  <polygon
-                    points="70,5 135,40 135,114 70,149 5,114 5,40"
-                    fill="#0c1017"
-                    stroke="#ea580c"
-                    strokeWidth="2.5"
-                    strokeLinejoin="round"
-                  />
-                  <g transform="translate(42, 48)">
-                    <path
-                      d="M 28 6 L 48 18 L 48 40 L 28 52 L 8 40 L 8 18 Z"
-                      fill="none"
-                      stroke="#ea580c"
-                      strokeWidth="3.2"
-                    />
-                    <circle cx="28" cy="30" r="3" fill="#ffffff" />
-                  </g>
-                </svg>
-              </div>
-              <div className="mindmap-hub-badge">
-                <div className="mindmap-hub-badge-dot" />
-                <span className="mindmap-hub-badge-text">SOC 360 CORE ENGINE</span>
-              </div>
-            </div>
-
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '14px',
-              width: '100%',
-              maxWidth: '420px',
-              position: 'relative',
-              paddingLeft: '20px',
-              borderLeft: '2px dashed #cbd5e1',
-            }}>
-              {[
-                {
-                  step: '01',
-                  title: 'Register Brand',
-                  desc: 'Enter trademark name & official domains to anchor the ground-truth baseline without manual URLs.',
-                  icon: <Eye size={20} />,
-                  cls: 'mindmap-icon-orange-1',
-                  badgeBg: '#ffedd5',
-                  badgeColor: '#c2410c',
-                },
-                {
-                  step: '02',
-                  title: 'Auto-Scan Vectors',
-                  desc: 'Simultaneous automated discovery across social handles (X, Telegram, IG) and mobile app stores.',
-                  icon: <Zap size={20} />,
-                  cls: 'mindmap-icon-green-1',
-                  badgeBg: '#ecfccb',
-                  badgeColor: '#4d7c0f',
-                },
-                {
-                  step: '03',
-                  title: 'Similarity Analysis',
-                  desc: 'Deep algorithmic matching with RapidFuzz lexical analysis and ImageHash perceptual logo comparison.',
-                  icon: <Search size={20} />,
-                  cls: 'mindmap-icon-green-2',
-                  badgeBg: '#dcfce7',
-                  badgeColor: '#15803d',
-                },
-                {
-                  step: '04',
-                  title: 'Triage Findings',
-                  desc: 'Review evidence dossiers, confirm suspicious threats, and export audit-ready PDF/CSV reports.',
-                  icon: <ShieldCheck size={20} />,
-                  cls: 'mindmap-icon-orange-2',
-                  badgeBg: '#fee2e2',
-                  badgeColor: '#b91c1c',
-                },
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  className="mindmap-card"
-                  style={{ width: '100%', maxWidth: '100%' }}
-                >
-                  <div
-                    style={{
-                      position: 'absolute',
-                      left: '-26px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      width: '10px',
-                      height: '10px',
-                      borderRadius: '50%',
-                      background: '#0f172a',
-                      border: '2px solid #ffffff',
-                      boxShadow: '0 0 0 1px #cbd5e1',
-                    }}
-                  />
-                  <div className={`mindmap-card-icon-wrap ${item.cls}`} style={{ width: '42px', height: '42px' }}>
-                    {item.icon}
-                  </div>
-                  <div className="mindmap-card-content">
-                    <div className="mindmap-card-title">
-                      <span>{item.title}</span>
-                      <span className="mindmap-card-step-badge" style={{ background: item.badgeBg, color: item.badgeColor }}>
-                        {item.step}
-                      </span>
-                    </div>
-                    <p className="mindmap-card-desc">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
