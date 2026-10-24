@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     SERPER_API_KEY: str = ""
     SERPAPI_API_KEY: str = ""
     GITHUB_TOKEN: str = ""
+    TWITTER_BEARER_TOKEN: str = ""
+    VIRUSTOTAL_API_KEY: str = ""
+    URLSCAN_API_KEY: str = ""
 
     # CORS Configuration
     CORS_ORIGINS: Union[str, List[str]] = (

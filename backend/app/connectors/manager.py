@@ -4,6 +4,7 @@ from app.config import settings
 from app.connectors.base import BaseConnector, ConnectorResult
 from app.connectors.app_store import AppleAppStoreConnector, GooglePlayStoreConnector
 from app.connectors.social import GitHubConnector, TwitterConnector, TelegramConnector, WebSearchConnector
+from app.connectors.security_intel import VirusTotalConnector, URLScanConnector
 from app.schemas.candidate import SocialCandidateInput, AppCandidateInput
 
 
@@ -13,7 +14,7 @@ def sanitize_slug(name: str) -> str:
 
 
 class ConnectorManager:
-    """Orchestrates multi-source candidate discovery across app store and social connectors."""
+    """Orchestrates multi-source candidate discovery across app store, social, and security threat intel connectors."""
 
     def __init__(self):
         self.app_connectors: List[BaseConnector] = [
@@ -26,24 +27,34 @@ class ConnectorManager:
             TelegramConnector(),
             WebSearchConnector(),
         ]
+        self.threat_intel_connectors: List[BaseConnector] = [
+            VirusTotalConnector(),
+            URLScanConnector(),
+        ]
 
     def get_sources_status(self) -> Dict[str, Any]:
         """Return the configuration and readiness status of all external surveillance connectors."""
         app_statuses = [c.get_status() for c in self.app_connectors]
         social_statuses = [c.get_status() for c in self.social_connectors]
+        intel_statuses = [c.get_status() for c in self.threat_intel_connectors]
 
         active_apps = [s for s in app_statuses if s.get("status") == "active"]
         active_social = [s for s in social_statuses if s.get("status") == "active"]
+        active_intel = [s for s in intel_statuses if s.get("status") == "active"]
 
         return {
             "app_sources": app_statuses,
             "social_sources": social_statuses,
+            "threat_intel_sources": intel_statuses,
             "active_app_connectors": len(active_apps),
             "total_app_connectors": len(app_statuses),
             "active_social_connectors": len(active_social),
             "total_social_connectors": len(social_statuses),
+            "active_intel_connectors": len(active_intel),
+            "total_intel_connectors": len(intel_statuses),
             "live_app_scanning_ready": len(active_apps) > 0,
             "live_social_scanning_ready": len(active_social) > 0,
+            "live_threat_intel_ready": len(active_intel) > 0,
         }
 
     def discover_live_app_candidates(
@@ -86,13 +97,15 @@ class ConnectorManager:
         brand_info: Optional[Dict[str, Any]] = None,
         limit: int = 10,
     ) -> Tuple[List[SocialCandidateInput], Dict[str, Any]]:
-        """Run configured social connectors and deduplicate results. Never fabricates candidates."""
+        """Run configured social and threat intel connectors and deduplicate results."""
         candidates: List[SocialCandidateInput] = []
         source_details: Dict[str, Any] = {}
         seen_usernames = set()
         seen_urls = set()
 
-        for conn in self.social_connectors:
+        all_connectors = self.social_connectors + self.threat_intel_connectors
+
+        for conn in all_connectors:
             res: ConnectorResult = conn.search(brand_name, brand_info, limit=limit)
             source_details[conn.name] = res.to_dict()
 

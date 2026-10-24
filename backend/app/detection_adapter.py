@@ -229,6 +229,18 @@ class InternalDetectionAdapter(BaseDetectionEngine):
                     signals["unauthorized_developer"] = True
                     score += 25
 
+        # Threat intelligence signals (VirusTotal / urlscan.io)
+        is_threat_intel = (
+            "virustotal" in candidate_desc_lower
+            or "urlscan" in candidate_desc_lower
+            or "threat intel alert" in candidate_name_lower
+            or "phishing domain" in candidate_name_lower
+        )
+        if is_threat_intel:
+            signals["threat_intel_flag"] = True
+            signals["threat_intel_source"] = "VirusTotal / urlscan.io"
+            score += 35
+
         # Cap score at 100
         score = min(score, 100)
         risk_level = calculate_risk_level(score)
@@ -237,7 +249,7 @@ class InternalDetectionAdapter(BaseDetectionEngine):
             recommendation = "Escalate"
             explanation = f"Critical risk detected: High-confidence brand impersonation targeting '{data.brand_name}'. Potential phishing or rogue profile."
         elif score >= 60:
-            recommendation = "Escalate" if signals.get("unauthorized_developer") or len(signals.get("suspicious_keywords", [])) > 0 else "Review"
+            recommendation = "Escalate" if signals.get("unauthorized_developer") or len(signals.get("suspicious_keywords", [])) > 0 or signals.get("threat_intel_flag") else "Review"
             explanation = f"High risk detected: Candidate mimics '{data.brand_name}' with deceptive threat indicators."
         elif score >= 30:
             recommendation = "Review"
@@ -245,6 +257,9 @@ class InternalDetectionAdapter(BaseDetectionEngine):
         else:
             recommendation = "Ignore"
             explanation = f"Low risk: Limited identity overlap with '{data.brand_name}'."
+
+        if signals.get("threat_intel_flag"):
+            explanation += " Corroborated by active threat intelligence database (VirusTotal / urlscan.io)."
 
         return DetectionResult(
             risk_score=score,
