@@ -316,3 +316,4 @@ npm run build      # Clean production build with 0 errors
 
 Built for the Digital Risk Protection Hackathon 2026.  
 Licensed under the [MIT License](LICENSE).
+"# digital-risk" 
