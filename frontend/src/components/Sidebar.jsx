@@ -12,7 +12,7 @@ import {
   Radio
 } from 'lucide-react';
 
-export default function Sidebar({ mobileOpen, onCloseMobile, openFindingsCount = 4 }) {
+export default function Sidebar({ mobileOpen, onCloseMobile, openFindingsCount = 0 }) {
   const navGroups = [
     {
       title: 'OVERVIEW',

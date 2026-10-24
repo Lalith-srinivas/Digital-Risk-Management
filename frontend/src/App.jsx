@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import api from './services/api';
 import LandingPage from './pages/LandingPage';
 import BrandScan from './pages/BrandScan';
 import ScanResults from './pages/ScanResults';
@@ -60,6 +61,43 @@ const PAGE_META = {
 function AppLayout({ children }) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openFindingsCount, setOpenFindingsCount] = useState(0);
+
+  const refreshFindingsCount = useCallback(async () => {
+    try {
+      const statsRes = await api.getDashboardStats();
+      const stats = statsRes?.data;
+      if (!stats || !stats.totalBrands || stats.totalBrands === 0) {
+        setOpenFindingsCount(0);
+      } else {
+        const count = typeof stats.openFindings === 'number'
+          ? stats.openFindings
+          : (stats.recentFindings?.filter(f => {
+              const st = (f.reviewStatus || '').toLowerCase();
+              return st !== 'resolved' && st !== 'false positive';
+            }).length || 0);
+        setOpenFindingsCount(count);
+      }
+    } catch {
+      setOpenFindingsCount(0);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshFindingsCount();
+
+    const handleUpdate = () => {
+      refreshFindingsCount();
+    };
+
+    window.addEventListener('soc360:findings_updated', handleUpdate);
+    window.addEventListener('focus', handleUpdate);
+
+    return () => {
+      window.removeEventListener('soc360:findings_updated', handleUpdate);
+      window.removeEventListener('focus', handleUpdate);
+    };
+  }, [refreshFindingsCount, location.pathname]);
 
   let meta = PAGE_META[location.pathname];
   if (!meta) {
@@ -83,6 +121,7 @@ function AppLayout({ children }) {
         <Sidebar
           mobileOpen={mobileOpen}
           onCloseMobile={() => setMobileOpen(false)}
+          openFindingsCount={openFindingsCount}
         />
 
         {/* Main Content Area */}

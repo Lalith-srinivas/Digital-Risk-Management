@@ -196,13 +196,14 @@ def get_stats(
 
     total_brands = brand_query.count()
 
-    # If authenticated user has 0 brands, return clean onboarding state immediately
-    if user_id and total_brands == 0:
+    # If user has 0 brands, return clean onboarding state immediately
+    if total_brands == 0:
         return {
             "totalBrands": 0,
             "socialScanned": 0,
             "appsScanned": 0,
             "suspiciousFindings": 0,
+            "openFindings": 0,
             "riskCounts": {"High": 0, "Medium": 0, "Low": 0},
             "sourceCounts": {"social": 0, "apps": 0, "other": 0},
             "recentFindings": [],
@@ -232,6 +233,7 @@ def get_stats(
 
     social_findings = finding_query.filter(Finding.source_type == "social").count()
     app_findings = finding_query.filter(Finding.source_type == "app").count()
+    open_findings = finding_query.filter(~Finding.review_status.in_(["Resolved", "False Positive"])).count()
 
     # Recent findings with hydrated candidate and brand info
     recent_findings_db = (
@@ -291,6 +293,7 @@ def get_stats(
         "socialScanned": int(social_checked),
         "appsScanned": int(app_checked),
         "suspiciousFindings": suspicious_findings,
+        "openFindings": open_findings,
         "riskCounts": {
             "High": high_risk,
             "Medium": med_risk,

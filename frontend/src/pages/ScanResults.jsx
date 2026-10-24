@@ -20,7 +20,22 @@ import {
   Info,
   Database,
   Radio,
+  Activity,
+  PieChart as PieChartIcon,
+  BarChart3,
+  TrendingUp,
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RechartsTooltip,
+} from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { downloadCsvReport, downloadPdfReport } from '../utils/reports';
@@ -98,6 +113,88 @@ export default function ScanResults() {
 
   const socialCount = findings.filter((f) => (f.sourceType || f.source_type) === 'social').length;
   const appCount = findings.filter((f) => (f.sourceType || f.source_type) === 'app').length;
+
+  const [graphTab, setGraphTab] = useState('severity'); // 'severity' | 'vectors'
+
+  // Calculate Brand Risk Score (0-100) based on scan findings
+  const brandRiskScore = Math.min(100, Math.max(0, (() => {
+    if (findings.length === 0) return 0;
+    const scores = findings.map(f => (f.riskScore !== undefined ? f.riskScore : (f.risk_score || 0)));
+    const maxScore = Math.max(...scores);
+    const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+    const penalty = Math.min(20, highRiskCount * 8 + medRiskCount * 2);
+    return Math.round(0.6 * maxScore + 0.4 * avgScore + penalty);
+  })()));
+
+  const getRiskPostureInfo = (score) => {
+    if (score >= 75) {
+      return {
+        level: 'CRITICAL RISK',
+        color: '#dc2626',
+        bg: '#fef2f2',
+        border: '#fecaca',
+        badgeBg: '#dc2626',
+        desc: 'Critical impersonation threats detected. High-similarity accounts or unauthorized mobile apps warrant immediate escalation.',
+      };
+    }
+    if (score >= 50) {
+      return {
+        level: 'HIGH RISK',
+        color: '#ea580c',
+        bg: '#fff7ed',
+        border: '#ffedd5',
+        badgeBg: '#ea580c',
+        desc: 'Significant brand infringement signals identified. Priority candidates require analyst triage and identity verification.',
+      };
+    }
+    if (score >= 25) {
+      return {
+        level: 'MODERATE RISK',
+        color: '#d97706',
+        bg: '#fffbeb',
+        border: '#fde68a',
+        badgeBg: '#d97706',
+        desc: 'Potential look-alikes or unofficial packages found. Moderate name or visual overlap with protected brand assets.',
+      };
+    }
+    return {
+      level: 'LOW / MINIMAL RISK',
+      color: '#16a34a',
+      bg: '#f0fdf4',
+      border: '#bbf7d0',
+      badgeBg: '#16a34a',
+      desc: 'No high-priority impersonation detected. Candidates are low similarity, fan communities, or verified corporate accounts.',
+    };
+  };
+
+  const riskPosture = getRiskPostureInfo(brandRiskScore);
+
+  // Graph Data: Severity Breakdown
+  const severityDonutData = [
+    { name: 'High Priority', value: highRiskCount, color: '#ef4444' },
+    { name: 'Medium Risk', value: medRiskCount, color: '#f59e0b' },
+    { name: 'Low / Benign', value: lowRiskCount, color: '#10b981' },
+  ].filter(d => d.value > 0);
+
+  const displayDonutData = severityDonutData.length > 0 ? severityDonutData : [
+    { name: 'Clean / No Risks', value: 1, color: '#10b981' }
+  ];
+
+  // Graph Data: Surface Vectors Breakdown
+  const vectorBarData = [
+    {
+      name: 'Social Media',
+      high: findings.filter(f => (f.sourceType || f.source_type) === 'social' && ((f.riskLevel || f.risk_level || '').toLowerCase() === 'high' || (f.riskScore || 0) >= 60)).length,
+      medium: findings.filter(f => (f.sourceType || f.source_type) === 'social' && ((f.riskLevel || f.risk_level || '').toLowerCase() === 'medium' || ((f.riskScore || 0) >= 30 && (f.riskScore || 0) < 60))).length,
+      low: findings.filter(f => (f.sourceType || f.source_type) === 'social' && ((f.riskLevel || f.risk_level || '').toLowerCase() === 'low' || (f.riskScore || 0) < 30)).length,
+    },
+    {
+      name: 'App Stores',
+      high: findings.filter(f => (f.sourceType || f.source_type) === 'app' && ((f.riskLevel || f.risk_level || '').toLowerCase() === 'high' || (f.riskScore || 0) >= 60)).length,
+      medium: findings.filter(f => (f.sourceType || f.source_type) === 'app' && ((f.riskLevel || f.risk_level || '').toLowerCase() === 'medium' || ((f.riskScore || 0) >= 30 && (f.riskScore || 0) < 60))).length,
+      low: findings.filter(f => (f.sourceType || f.source_type) === 'app' && ((f.riskLevel || f.risk_level || '').toLowerCase() === 'low' || (f.riskScore || 0) < 30)).length,
+    },
+  ];
 
   // Filtered findings
   const filteredFindings = findings.filter((f) => {
@@ -507,6 +604,293 @@ export default function ScanResults() {
         </div>
       </div>
 
+      {/* Executive Brand Threat Assessment & Results Graph */}
+      <div className="scan-assessment-grid">
+        {/* Left: Overall Brand Risk Score Card */}
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: '12px',
+          padding: '20px 22px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Activity size={18} color="var(--primary)" />
+                <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  Brand Risk Score
+                </h3>
+              </div>
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 800,
+                color: '#ffffff',
+                background: riskPosture.badgeBg,
+                padding: '3px 8px',
+                borderRadius: '9999px',
+                letterSpacing: '0.04em',
+              }}>
+                {riskPosture.level}
+              </span>
+            </div>
+
+            {/* Score Ring & Value */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 18, margin: '12px 0' }}>
+              <div style={{ position: 'relative', width: 104, height: 104, flexShrink: 0 }}>
+                <svg width="104" height="104" viewBox="0 0 104 104" style={{ transform: 'rotate(-90deg)' }}>
+                  <circle
+                    cx="52"
+                    cy="52"
+                    r="42"
+                    fill="transparent"
+                    stroke="#f1f5f9"
+                    strokeWidth="10"
+                  />
+                  <circle
+                    cx="52"
+                    cy="52"
+                    r="42"
+                    fill="transparent"
+                    stroke={riskPosture.color}
+                    strokeWidth="10"
+                    strokeDasharray={263.89}
+                    strokeDashoffset={263.89 - (263.89 * brandRiskScore) / 100}
+                    strokeLinecap="round"
+                    style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+                  />
+                </svg>
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <span style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>
+                    {brandRiskScore}
+                  </span>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginTop: 2 }}>
+                    / 100
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: 4 }}>
+                  Overall Threat Posture
+                </div>
+                <p style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.45, margin: 0 }}>
+                  {riskPosture.desc}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Metrics Bar */}
+          <div style={{
+            background: riskPosture.bg,
+            border: `1px solid ${riskPosture.border}`,
+            borderRadius: '8px',
+            padding: '9px 12px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: '12px',
+            marginTop: 10,
+          }}>
+            <span style={{ color: riskPosture.color, fontWeight: 700 }}>
+              Peak Threat Score:
+            </span>
+            <span style={{ color: riskPosture.color, fontWeight: 800, fontSize: '13px' }}>
+              {findings.length > 0 ? `${Math.max(...findings.map(f => (f.riskScore !== undefined ? f.riskScore : (f.risk_score || 0))))}/100` : '0/100'}
+            </span>
+          </div>
+        </div>
+
+        {/* Right: Risk Severity & Vector Threat Graph */}
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: '12px',
+          padding: '20px 22px',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+          minWidth: 0,
+        }}>
+          {/* Header & Graph Tab Switcher */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 12,
+            flexWrap: 'wrap',
+            gap: 10,
+          }}>
+            <div>
+              <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                Scan Results Threat Graph
+              </h3>
+              <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0' }}>
+                {graphTab === 'severity'
+                  ? 'Severity proportions across all detected candidates'
+                  : 'Vector comparison across social and mobile channels'}
+              </p>
+            </div>
+
+            {/* Toggle Graph View */}
+            <div style={{
+              display: 'inline-flex',
+              background: '#f1f5f9',
+              borderRadius: '8px',
+              padding: '3px',
+              gap: 4,
+            }}>
+              <button
+                type="button"
+                onClick={() => setGraphTab('severity')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '5px 10px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: graphTab === 'severity' ? '#ffffff' : 'transparent',
+                  color: graphTab === 'severity' ? '#4f46e5' : '#64748b',
+                  boxShadow: graphTab === 'severity' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <PieChartIcon size={13} />
+                <span>Severity Breakdown</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setGraphTab('vectors')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '5px 10px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: graphTab === 'vectors' ? '#ffffff' : 'transparent',
+                  color: graphTab === 'vectors' ? '#4f46e5' : '#64748b',
+                  boxShadow: graphTab === 'vectors' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <BarChart3 size={13} />
+                <span>Vector Breakdown</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Graph Content */}
+          <div style={{ width: '100%', height: 175, minWidth: 0 }}>
+            {graphTab === 'severity' ? (
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
+                <div style={{ width: '55%', height: '100%', position: 'relative' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={displayDonutData}
+                        innerRadius={45}
+                        outerRadius={70}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {displayDonutData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip
+                        contentStyle={{
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    pointerEvents: 'none',
+                  }}>
+                    <span style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>
+                      {findings.length}
+                    </span>
+                    <span style={{ fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>
+                      Findings
+                    </span>
+                  </div>
+                </div>
+
+                {/* Donut Legend */}
+                <div style={{ width: '45%', display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#475569' }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#ef4444' }} /> High Risk:
+                    </span>
+                    <span style={{ fontWeight: 800, color: '#dc2626' }}>{highRiskCount}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#475569' }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#f59e0b' }} /> Medium Risk:
+                    </span>
+                    <span style={{ fontWeight: 800, color: '#d97706' }}>{medRiskCount}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#475569' }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#10b981' }} /> Low / Benign:
+                    </span>
+                    <span style={{ fontWeight: 800, color: '#16a34a' }}>{lowRiskCount}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={vectorBarData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <XAxis dataKey="name" fontSize={11} stroke="#94a3b8" tickLine={false} />
+                  <YAxis fontSize={11} stroke="#94a3b8" tickLine={false} axisLine={false} allowDecimals={false} />
+                  <RechartsTooltip
+                    contentStyle={{
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                    }}
+                  />
+                  <Bar dataKey="high" name="High Risk" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="medium" name="Medium Risk" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="low" name="Low / Benign" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Filter and Vector Tabs */}
       <div style={{
         background: '#ffffff',
@@ -643,14 +1027,14 @@ export default function ScanResults() {
           </div>
         ) : (
           <div className="table-responsive">
-            <table className="data-table" style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+            <table className="data-table" style={{ width: '100%', minWidth: '920px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: '700', fontSize: '12px', textTransform: 'uppercase' }}>
-                  <th style={{ padding: '12px 18px' }}>Candidate Identity</th>
-                  <th style={{ padding: '12px 18px' }}>Vector</th>
-                  <th style={{ padding: '12px 18px' }}>Review Priority</th>
-                  <th style={{ padding: '12px 18px' }}>Evidence Summary</th>
-                  <th style={{ padding: '12px 18px', textAlign: 'right' }}>Actions</th>
+                  <th style={{ padding: '14px 18px', width: '24%', minWidth: '210px' }}>Candidate Identity</th>
+                  <th style={{ padding: '14px 18px', width: '15%', minWidth: '130px', whiteSpace: 'nowrap' }}>Vector</th>
+                  <th style={{ padding: '14px 18px', width: '16%', minWidth: '140px', whiteSpace: 'nowrap' }}>Review Priority</th>
+                  <th className="cell-wrap" style={{ padding: '14px 18px', width: '33%', minWidth: '280px', whiteSpace: 'normal' }}>Evidence Summary</th>
+                  <th style={{ padding: '14px 18px', width: '12%', minWidth: '110px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -676,32 +1060,32 @@ export default function ScanResults() {
                       onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
                       onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <td style={{ padding: '14px 18px' }}>
+                      <td style={{ padding: '14px 18px', verticalAlign: 'middle' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                           <img
                             src={cAvatar}
                             alt=""
-                            style={{ width: '36px', height: '36px', borderRadius: isSocial ? '50%' : '8px', objectFit: 'cover', border: '1px solid #e2e8f0' }}
+                            style={{ width: '36px', height: '36px', borderRadius: isSocial ? '50%' : '8px', objectFit: 'cover', border: '1px solid #e2e8f0', flexShrink: 0 }}
                           />
-                          <div>
-                            <div style={{ fontWeight: '700', color: '#0f172a' }}>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: '700', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {cName}
                             </div>
-                            <div style={{ fontSize: '12px', color: '#64748b' }}>
+                            <div style={{ fontSize: '12px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {cHandle}
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      <td style={{ padding: '14px 18px' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '3px 8px', borderRadius: '4px', background: '#f1f5f9', fontSize: '12px', fontWeight: '600', color: '#475569' }}>
+                      <td style={{ padding: '14px 18px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 10px', borderRadius: '4px', background: '#f1f5f9', fontSize: '12px', fontWeight: '600', color: '#475569' }}>
                           {isSocial ? <Share2 size={13} color="#4f46e5" /> : <Smartphone size={13} color="#059669" />}
                           {cPlatform}
                         </div>
                       </td>
 
-                      <td style={{ padding: '14px 18px' }}>
+                      <td style={{ padding: '14px 18px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <RiskBadge level={rLevel} score={rScore} />
                           <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>
@@ -710,18 +1094,43 @@ export default function ScanResults() {
                         </div>
                       </td>
 
-                      <td style={{ padding: '14px 18px', maxWidth: '320px' }}>
-                        <div style={{ fontSize: '12px', color: '#334155', lineHeight: '1.4' }}>
+                      <td
+                        className="cell-wrap"
+                        style={{
+                          padding: '14px 18px',
+                          verticalAlign: 'middle',
+                          whiteSpace: 'normal',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                          minWidth: '280px',
+                          maxWidth: '460px',
+                        }}
+                      >
+                        <div style={{
+                          fontSize: '12.5px',
+                          color: '#334155',
+                          lineHeight: '1.5',
+                          whiteSpace: 'normal',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                        }}>
                           {cEvidence}
                         </div>
                         {f.evidence?.name_similarity !== undefined && (
-                          <div style={{ fontSize: '11px', color: '#6366f1', marginTop: '2px', fontWeight: '600' }}>
+                          <div style={{ fontSize: '11px', color: '#6366f1', marginTop: '4px', fontWeight: '600', whiteSpace: 'nowrap' }}>
                             Lexical match: {Math.round(f.evidence.name_similarity)}%
                           </div>
                         )}
                       </td>
 
-                      <td style={{ padding: '14px 18px', textAlign: 'right' }}>
+                      <td style={{
+                        padding: '14px 18px',
+                        textAlign: 'right',
+                        verticalAlign: 'middle',
+                        whiteSpace: 'nowrap',
+                        width: '110px',
+                        minWidth: '110px',
+                      }}>
                         {cUrl ? (
                           <a
                             href={cUrl}
@@ -730,8 +1139,8 @@ export default function ScanResults() {
                             style={{
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '4px',
-                              padding: '6px 12px',
+                              gap: '5px',
+                              padding: '6px 14px',
                               fontSize: '12px',
                               fontWeight: '600',
                               color: '#4f46e5',
@@ -739,6 +1148,8 @@ export default function ScanResults() {
                               border: '1px solid #ddd6fe',
                               borderRadius: '6px',
                               textDecoration: 'none',
+                              whiteSpace: 'nowrap',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
                             }}
                           >
                             Inspect <ExternalLink size={12} />

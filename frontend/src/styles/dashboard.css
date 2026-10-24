@@ -1070,6 +1070,14 @@
   white-space: nowrap;
 }
 
+.data-table th.cell-wrap,
+.data-table td.cell-wrap,
+.data-table .cell-wrap {
+  white-space: normal !important;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
 .data-table th {
   padding: 12px 14px;
   font-size: 0.74rem;
@@ -1784,5 +1792,22 @@
     background: #f8fafc;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-light);
+  }
+}
+
+/* Scan Results Risk Assessment Card & Graph */
+.scan-assessment-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 18px;
+  margin-bottom: 22px;
+  min-width: 0;
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .scan-assessment-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
 }
