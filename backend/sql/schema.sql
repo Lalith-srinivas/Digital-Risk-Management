@@ -103,3 +103,22 @@ CREATE TRIGGER trg_findings_updated_at
     BEFORE UPDATE ON findings
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+-- Data API Access Grants (Supabase PostgREST & supabase-js compatibility)
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+
+GRANT ALL ON TABLE public.brands TO postgres, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.brands TO authenticated;
+GRANT SELECT ON TABLE public.brands TO anon;
+
+GRANT ALL ON TABLE public.candidates TO postgres, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.candidates TO authenticated;
+GRANT SELECT ON TABLE public.candidates TO anon;
+
+GRANT ALL ON TABLE public.scans TO postgres, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.scans TO authenticated;
+GRANT SELECT ON TABLE public.scans TO anon;
+
+GRANT ALL ON TABLE public.findings TO postgres, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.findings TO authenticated;
+GRANT SELECT ON TABLE public.findings TO anon;
