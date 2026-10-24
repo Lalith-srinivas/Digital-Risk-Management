@@ -27,7 +27,7 @@ class FindingService:
     def get_by_id(db: Session, finding_id: uuid.UUID, user_id: Optional[uuid.UUID] = None) -> Optional[Finding]:
         query = (
             db.query(Finding)
-            .options(joinedload(Finding.candidate))
+            .options(joinedload(Finding.candidate), joinedload(Finding.brand))
             .filter(Finding.id == finding_id)
         )
         if user_id:
@@ -48,7 +48,7 @@ class FindingService:
         page_size: int = 20,
         user_id: Optional[uuid.UUID] = None,
     ) -> Tuple[List[Finding], int]:
-        query = db.query(Finding).options(joinedload(Finding.candidate))
+        query = db.query(Finding).options(joinedload(Finding.candidate), joinedload(Finding.brand))
 
         if user_id:
             query = query.filter(Finding.user_id == user_id)
@@ -65,17 +65,39 @@ class FindingService:
 
         total = query.count()
 
-        # Sorting logic
+        # Sorting logic: when brand_id is specified, prioritize brand-name matching candidates first
         sort_column = Finding.created_at
         if sort_by == "risk_score":
             sort_column = Finding.risk_score
         elif sort_by == "updated_at":
             sort_column = Finding.updated_at
 
+        order_by_args = []
+        if brand_id:
+            from app.models.brand import Brand
+            brand_obj = db.query(Brand).filter(Brand.id == brand_id).first()
+            if brand_obj and brand_obj.name:
+                from sqlalchemy import case, func
+                b_name = f"%{brand_obj.name.lower().strip()}%"
+                query = query.join(Candidate, Finding.candidate_id == Candidate.id)
+                is_brand_match = case(
+                    (
+                        func.lower(Candidate.candidate_name).like(b_name)
+                        | func.lower(Candidate.package_identifier).like(b_name)
+                        | func.lower(Candidate.username).like(b_name)
+                        | func.lower(Candidate.developer_name).like(b_name),
+                        1,
+                    ),
+                    else_=0,
+                )
+                order_by_args.append(is_brand_match.desc())
+
         if sort_dir.lower() == "asc":
-            query = query.order_by(sort_column.asc())
+            order_by_args.append(sort_column.asc())
         else:
-            query = query.order_by(sort_column.desc())
+            order_by_args.append(sort_column.desc())
+
+        query = query.order_by(*order_by_args)
 
         # Pagination logic
         skip = (max(1, page) - 1) * page_size
@@ -94,7 +116,12 @@ class FindingService:
         if new_status not in ALLOWED_REVIEW_STATUSES:
             raise ValueError(f"Invalid review status: '{new_status}'. Allowed values: {sorted(ALLOWED_REVIEW_STATUSES)}")
 
-        finding = db.query(Finding).options(joinedload(Finding.candidate)).filter(Finding.id == finding_id).first()
+        finding = (
+            db.query(Finding)
+            .options(joinedload(Finding.candidate), joinedload(Finding.brand))
+            .filter(Finding.id == finding_id)
+            .first()
+        )
         if not finding:
             return None
 

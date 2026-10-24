@@ -44,6 +44,7 @@ class FindingStatusUpdate(BaseModel):
 class FindingResponse(BaseModel):
     id: uuid.UUID
     brand_id: uuid.UUID
+    brand_name: Optional[str] = None
     candidate_id: uuid.UUID
     scan_id: Optional[uuid.UUID] = None
     source_type: str

@@ -246,8 +246,21 @@ class ScanService:
             scan.findings_created = len(findings)
             db.commit()
             db.refresh(scan)
-            for f in findings:
-                db.refresh(f)
+            # Prioritize findings matching the brand name first, followed by remaining
+            def _is_social_brand_match(f_obj: Finding) -> bool:
+                cand = getattr(f_obj, "candidate", None)
+                if not cand:
+                    return False
+                b_terms = [brand.name.lower().strip()] + [a.lower().strip() for a in (brand.aliases or []) if a]
+                c_name = str(cand.candidate_name or "").lower()
+                c_user = str(cand.username or "").lower()
+                return any(t in c_name or t in c_user for t in b_terms if len(t) >= 2)
+
+            b_matches = [f for f in findings if _is_social_brand_match(f)]
+            rem = [f for f in findings if not _is_social_brand_match(f)]
+            b_matches.sort(key=lambda x: x.risk_score, reverse=True)
+            rem.sort(key=lambda x: x.risk_score, reverse=True)
+            findings = b_matches + rem
 
             return scan, findings
 
@@ -413,8 +426,22 @@ class ScanService:
             scan.findings_created = len(findings)
             db.commit()
             db.refresh(scan)
-            for f in findings:
-                db.refresh(f)
+            # Prioritize findings matching the brand name first, followed by remaining
+            def _is_app_brand_match(f_obj: Finding) -> bool:
+                cand = getattr(f_obj, "candidate", None)
+                if not cand:
+                    return False
+                b_terms = [brand.name.lower().strip()] + [a.lower().strip() for a in (brand.aliases or []) if a]
+                c_name = str(cand.candidate_name or "").lower()
+                c_pkg = str(cand.package_identifier or "").lower()
+                c_dev = str(cand.developer_name or "").lower()
+                return any(t in c_name or t in c_pkg or t in c_dev for t in b_terms if len(t) >= 2)
+
+            b_matches = [f for f in findings if _is_app_brand_match(f)]
+            rem = [f for f in findings if not _is_app_brand_match(f)]
+            b_matches.sort(key=lambda x: x.risk_score, reverse=True)
+            rem.sort(key=lambda x: x.risk_score, reverse=True)
+            findings = b_matches + rem
 
             return scan, findings
 
@@ -648,6 +675,20 @@ class ScanService:
             })
 
         total_candidates = len(social_items) + len(app_items)
+
+        # Prioritize findings matching the brand name first, followed by remaining
+        def _is_guest_brand_match(item: Dict[str, Any]) -> bool:
+            b_terms = [brand.name.lower().strip()] + [a.lower().strip() for a in (brand.aliases or []) if a]
+            c_name = str(item.get("candidateName") or item.get("candidate_name") or "").lower()
+            c_handle = str(item.get("candidateHandle") or item.get("username") or item.get("packageId") or item.get("package_identifier") or "").lower()
+            c_dev = str(item.get("developer") or item.get("developer_name") or "").lower()
+            return any(t in c_name or t in c_handle or t in c_dev for t in b_terms if len(t) >= 2)
+
+        b_matches = [f for f in findings if _is_guest_brand_match(f)]
+        rem = [f for f in findings if not _is_guest_brand_match(f)]
+        b_matches.sort(key=lambda x: x.get("risk_score", 0), reverse=True)
+        rem.sort(key=lambda x: x.get("risk_score", 0), reverse=True)
+        findings = b_matches + rem
 
         # 5. Risk Summary & Honest Status Message
         risk_summary = {

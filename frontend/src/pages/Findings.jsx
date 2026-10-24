@@ -25,6 +25,7 @@ import DataTable from '../components/DataTable';
 import DemoBanner from '../components/DemoBanner';
 import api from '../services/api';
 import { formatDate, formatRelativeTime } from '../utils/formatters';
+import { sortFindingsByBrandRelevance, matchesBrandName } from '../utils/sorting';
 
 /**
  * Round 2 Prioritized Investigation Queue:
@@ -69,8 +70,32 @@ export default function Findings() {
         api.getBrands()
       ]);
 
-      setFindings(findingsRes.data || []);
-      setBrands(brandsRes.data || []);
+      const brandList = brandsRes.data || [];
+      const brandMap = {};
+      brandList.forEach(b => {
+        brandMap[String(b.id)] = b;
+      });
+
+      // Enrich findings with accurate brand name and aliases
+      const rawFindings = (findingsRes.data || []).map(f => {
+        const brandObj = brandMap[String(f.brandId)];
+        const bName = (brandObj && brandObj.name) || (f.brandName && f.brandName !== 'Protected Brand' ? f.brandName : '') || (brandObj ? brandObj.name : 'Protected Brand');
+        return {
+          ...f,
+          brandName: bName,
+          brandDetails: {
+            ...f.brandDetails,
+            name: bName,
+          }
+        };
+      });
+
+      // Target brand if filterBrand is active
+      const activeBrandObj = filterBrand !== 'all' ? brandMap[String(filterBrand)] : null;
+      const sortedFindings = sortFindingsByBrandRelevance(rawFindings, activeBrandObj || '', sortBy, brandMap);
+
+      setFindings(sortedFindings);
+      setBrands(brandList);
       setIsDemo(findingsRes.isDemoData || false);
     } catch (err) {
       console.error('Error loading findings queue:', err);
@@ -167,21 +192,39 @@ export default function Findings() {
             </div>
 
             {/* Suspected vs Legitimate Asset Mapping (Round 2 requirement) */}
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 4,
-              marginTop: 4,
-              fontSize: '0.72rem',
-              color: '#4338ca',
-              backgroundColor: '#eef2ff',
-              padding: '2px 8px',
-              borderRadius: 6,
-              border: '1px solid #c7d2fe',
-              width: 'fit-content'
-            }}>
-              <ShieldCheck size={11} style={{ color: '#4f46e5' }} />
-              <span>Imitating: <strong>{row.brandName}</strong></span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                fontSize: '0.72rem',
+                color: '#4338ca',
+                backgroundColor: '#eef2ff',
+                padding: '2px 8px',
+                borderRadius: 6,
+                border: '1px solid #c7d2fe',
+                width: 'fit-content'
+              }}>
+                <ShieldCheck size={11} style={{ color: '#4f46e5' }} />
+                <span>Imitating: <strong>{row.brandName}</strong></span>
+              </div>
+
+              {matchesBrandName(row, row.brandName) && (
+                <span style={{
+                  fontSize: '0.68rem',
+                  backgroundColor: '#f0fdf4',
+                  color: '#15803d',
+                  border: '1px solid #bbf7d0',
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 3
+                }}>
+                  <Sparkles size={9} /> Brand Name Match
+                </span>
+              )}
             </div>
           </div>
         </div>

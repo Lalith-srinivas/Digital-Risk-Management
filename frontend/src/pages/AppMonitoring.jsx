@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Smartphone,
@@ -23,6 +23,7 @@ import Modal from '../components/Modal';
 import DemoBanner from '../components/DemoBanner';
 import api from '../services/api';
 import { formatRelativeTime } from '../utils/formatters';
+import { sortFindingsByBrandRelevance, matchesBrandName } from '../utils/sorting';
 
 export default function AppMonitoring() {
   const [searchParams] = useSearchParams();
@@ -68,8 +69,19 @@ export default function AppMonitoring() {
       ]);
 
       const brandList = brandsRes.data || [];
+      const brandMap = {};
+      brandList.forEach(b => {
+        brandMap[String(b.id)] = b;
+      });
+
+      const enrichedFindings = (findingsRes.data || []).map(f => {
+        const brandObj = brandMap[String(f.brandId)];
+        const bName = (brandObj && brandObj.name) || (f.brandName && f.brandName !== 'Protected Brand' ? f.brandName : '') || (brandObj ? brandObj.name : 'Protected Brand');
+        return { ...f, brandName: bName };
+      });
+
       setBrands(brandList);
-      setFindings(findingsRes.data || []);
+      setFindings(enrichedFindings);
       setIsDemo(findingsRes.isDemoData || false);
 
       const urlBrandId = searchParams.get('brandId');
@@ -102,6 +114,12 @@ export default function AppMonitoring() {
     }
     return true;
   });
+
+  const targetBrandObj = brands.find(b => String(b.id) === String(selectedBrandId)) || null;
+
+  const sortedFindings = useMemo(() => {
+    return sortFindingsByBrandRelevance(filteredFindings, targetBrandObj || '', 'riskScore');
+  }, [filteredFindings, targetBrandObj]);
 
   // Brand-first automated app store scan trigger
   const handleStartBrandScan = async () => {
@@ -211,8 +229,23 @@ export default function AppMonitoring() {
             className="candidate-avatar square"
           />
           <div className="candidate-info">
-            <h4>{row.candidateName}</h4>
-            <p>{row.packageId || 'Package unassigned'}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <h4 style={{ margin: 0 }}>{row.candidateName}</h4>
+              {matchesBrandName(row, row.brandName) && (
+                <span style={{
+                  fontSize: '0.65rem',
+                  backgroundColor: '#f0fdf4',
+                  color: '#15803d',
+                  border: '1px solid #bbf7d0',
+                  padding: '1px 5px',
+                  borderRadius: 4,
+                  fontWeight: 600
+                }}>
+                  Brand Match
+                </span>
+              )}
+            </div>
+            <p style={{ margin: 0 }}>{row.packageId || 'Package unassigned'}</p>
           </div>
         </div>
       )
@@ -559,7 +592,7 @@ export default function AppMonitoring() {
 
           <DataTable
             columns={columns}
-            data={filteredFindings}
+            data={sortedFindings}
             keyField="id"
             emptyMessage="No application findings recorded for this brand. Click 'Start App Store Scan' to execute discovery."
           />

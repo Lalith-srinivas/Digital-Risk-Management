@@ -8,6 +8,7 @@
  */
 
 import { getStoredDemoData, saveStoredDemoData, INITIAL_BRANDS, INITIAL_FINDINGS, INITIAL_SCANS } from './demoData';
+import { sortFindingsByBrandRelevance } from '../utils/sorting';
 
 const CONFIG_KEYS = {
   BASE_URL: 'soc360_api_base_url',
@@ -89,7 +90,7 @@ function normalizeFinding(f) {
     ...f,
     id: String(f.id),
     brandId: String(f.brand_id || f.brandId || ''),
-    brandName: brand.name || f.brandName || (f.brand_id ? 'Protected Brand' : ''),
+    brandName: f.brand_name || brand.name || f.brandName || (f.brandDetails && f.brandDetails.name) || (f.brand_id ? 'Protected Brand' : ''),
     candidateName: cand.candidate_name || f.candidate_name || f.candidateName || 'Candidate Identity',
     candidateHandle: cand.username || cand.package_identifier || f.candidateHandle || f.packageId || '',
     candidateUrl: cand.source_url || f.candidateUrl || '',
@@ -108,7 +109,7 @@ function normalizeFinding(f) {
     isDemoData: Boolean(f.is_demo || f.isDemoData),
     brandDetails: {
       id: String(f.brand_id || f.brandId || ''),
-      name: brand.name || f.brandName || 'Protected Brand',
+      name: f.brand_name || brand.name || f.brandName || (f.brandDetails && f.brandDetails.name) || 'Protected Brand',
       website: brand.website || '',
       logo: brand.logo_url || brand.logo || '',
       officialDevelopers: brand.official_developers || brand.developerNames || [],
@@ -886,12 +887,20 @@ export const api = {
       if (filters.riskLevel && filters.riskLevel !== 'all') queryParams.set('risk_level', filters.riskLevel);
       if (filters.reviewStatus && filters.reviewStatus !== 'all') queryParams.set('review_status', filters.reviewStatus);
       if (filters.search) queryParams.set('q', filters.search);
+      if (filters.sortBy === 'riskScore') {
+        queryParams.set('sort_by', 'risk_score');
+        queryParams.set('sort_dir', 'desc');
+      } else if (filters.sortBy === 'date') {
+        queryParams.set('sort_by', 'created_at');
+        queryParams.set('sort_dir', 'desc');
+      }
 
       const qs = queryParams.toString();
       const data = await this.request(`/findings${qs ? `?${qs}` : ''}`);
       const rawList = Array.isArray(data) ? data : (data.items || data.findings || []);
       const normalized = rawList.map(normalizeFinding);
-      return { data: normalized, isDemoData: false };
+      const prioritized = sortFindingsByBrandRelevance(normalized, filters.brandName || '', filters.sortBy || 'riskScore');
+      return { data: prioritized, isDemoData: false };
     } catch (err) {
       const { findings } = getStoredDemoData();
       let filtered = [...findings];
@@ -917,13 +926,9 @@ export const api = {
         );
       }
 
-      if (filters.sortBy === 'riskScore') {
-        filtered.sort((a, b) => b.riskScore - a.riskScore);
-      } else {
-        filtered.sort((a, b) => new Date(b.detectionDate) - new Date(a.detectionDate));
-      }
-
-      return { data: filtered.map(normalizeFinding), isDemoData: true };
+      const normalized = filtered.map(normalizeFinding);
+      const prioritized = sortFindingsByBrandRelevance(normalized, filters.brandName || '', filters.sortBy || 'riskScore');
+      return { data: prioritized, isDemoData: true };
     }
   },
 

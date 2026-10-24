@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ShieldAlert,
@@ -40,6 +40,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { downloadCsvReport, downloadPdfReport } from '../utils/reports';
 import RiskBadge from '../components/RiskBadge';
+import { sortFindingsByBrandRelevance, matchesBrandName } from '../utils/sorting';
 
 export default function ScanResults() {
   const navigate = useNavigate();
@@ -90,7 +91,11 @@ export default function ScanResults() {
     }).catch((e) => console.warn('Could not load connectors status:', e));
   }, [scanData.brand_id, scanData.brandId]);
 
-  const findings = liveFindings || scanData.findings || [];
+  const brandName = scanData.brand_name || scanData.brandName || scanData.brand_verification?.name || '';
+  const rawFindings = liveFindings || scanData.findings || [];
+  const findings = useMemo(() => {
+    return sortFindingsByBrandRelevance(rawFindings, brandName, 'riskScore');
+  }, [rawFindings, brandName]);
 
   // Metrics computation
   const highRiskCount = findings.filter((f) => {
