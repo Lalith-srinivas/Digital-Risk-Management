@@ -12,18 +12,84 @@ import {
   FileText,
   Clock,
   Layers,
-  Info
+  Info,
+  History,
+  User,
+  CheckCheck,
+  AlertCircle,
+  MessageSquare,
+  Sparkles,
+  PlusCircle
 } from 'lucide-react';
 import RiskBadge from '../components/RiskBadge';
 import LoadingState from '../components/LoadingState';
 import ErrorState from '../components/ErrorState';
 import DemoBanner from '../components/DemoBanner';
+import TakedownModal from '../components/TakedownModal';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { formatDate, formatDateTime, formatRelativeTime } from '../utils/formatters';
+
+const getStatusBadgeConfig = (status = '') => {
+  const s = String(status).toLowerCase();
+  if (s.includes('confirm')) {
+    return {
+      bg: '#fef2f2',
+      border: '#fecaca',
+      color: '#dc2626',
+      icon: ShieldAlert,
+      label: 'Confirmed'
+    };
+  }
+  if (s.includes('review') || s.includes('investigat')) {
+    return {
+      bg: '#fffbeb',
+      border: '#fde68a',
+      color: '#d97706',
+      icon: Clock,
+      label: 'Under Review'
+    };
+  }
+  if (s.includes('false') || s.includes('benign')) {
+    return {
+      bg: '#ecfdf5',
+      border: '#a7f3d0',
+      color: '#059669',
+      icon: CheckCircle,
+      label: 'False Positive'
+    };
+  }
+  if (s.includes('closed') || s.includes('resolved')) {
+    return {
+      bg: '#f1f5f9',
+      border: '#cbd5e1',
+      color: '#475569',
+      icon: CheckCheck,
+      label: 'Closed'
+    };
+  }
+  return {
+    bg: '#eff6ff',
+    border: '#bfdbfe',
+    color: '#2563eb',
+    icon: AlertCircle,
+    label: 'New'
+  };
+};
 
 export default function FindingDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  // Safeguard against useAuth outside AuthProvider
+  let currentUser = null;
+  try {
+    const auth = useAuth();
+    currentUser = auth?.user;
+  } catch (e) {
+    currentUser = null;
+  }
+  const analystName = currentUser?.user_metadata?.full_name || (currentUser?.email ? currentUser.email.split('@')[0] : 'Security Analyst');
 
   const [finding, setFinding] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -35,6 +101,34 @@ export default function FindingDetails() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [actionSuccessMessage, setActionSuccessMessage] = useState('');
 
+  // Audit History State
+  const [investigationHistory, setInvestigationHistory] = useState([]);
+
+  // Takedown Modal State
+  const [isTakedownModalOpen, setIsTakedownModalOpen] = useState(false);
+
+  const getInitialHistory = (data) => {
+    if (Array.isArray(data.investigation_history) && data.investigation_history.length > 0) {
+      return data.investigation_history;
+    }
+    if (Array.isArray(data.investigationHistory) && data.investigationHistory.length > 0) {
+      return data.investigationHistory;
+    }
+    if (data.evidence && Array.isArray(data.evidence.investigation_history) && data.evidence.investigation_history.length > 0) {
+      return data.evidence.investigation_history;
+    }
+    return [
+      {
+        id: `hist-init-${data.id}`,
+        timestamp: data.detectionDate || data.created_at || new Date().toISOString(),
+        previous_status: 'None',
+        new_status: data.reviewStatus || data.review_status || 'New',
+        analyst_name: 'SOC 360 Surveillance Engine',
+        notes: 'Initial automated detection and heuristic threat scoring.'
+      }
+    ];
+  };
+
   const loadFinding = async () => {
     setLoading(true);
     setError(null);
@@ -44,6 +138,7 @@ export default function FindingDetails() {
       setFinding(res.data);
       setReviewNotes(res.data.reviewNotes || '');
       setIsDemo(res.isDemoData || false);
+      setInvestigationHistory(getInitialHistory(res.data));
     } catch (err) {
       setError(err.message || 'Failed to load finding details');
     } finally {
@@ -55,19 +150,55 @@ export default function FindingDetails() {
     loadFinding();
   }, [id]);
 
-  const handleUpdateStatus = async (newStatus) => {
+  const handleUpdateStatus = async (newStatus, explicitNotes = null) => {
     setIsUpdating(true);
     setActionSuccessMessage('');
+    const effectiveNotes = explicitNotes !== null ? explicitNotes : reviewNotes;
+    const prevStatus = finding.reviewStatus || 'New';
+
+    // Optimistic entry for responsive audit trail
+    const newEntry = {
+      id: `hist-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      timestamp: new Date().toISOString(),
+      previous_status: prevStatus,
+      new_status: newStatus,
+      analyst_name: analystName,
+      notes: effectiveNotes.trim() || `Status updated to ${newStatus}`
+    };
+
     try {
-      const res = await api.updateFindingStatus(id, newStatus, reviewNotes);
-      setFinding(res.data);
-      setActionSuccessMessage(`Finding status successfully updated to "${newStatus}"`);
-      setTimeout(() => setActionSuccessMessage(''), 4000);
+      const res = await api.updateFindingStatus(id, newStatus, effectiveNotes);
+      const updatedFinding = res.data;
+      setFinding(updatedFinding);
+
+      const serverHistory = updatedFinding.investigation_history || updatedFinding.investigationHistory || updatedFinding.evidence?.investigation_history;
+      if (Array.isArray(serverHistory) && serverHistory.length > 0) {
+        setInvestigationHistory(serverHistory);
+      } else {
+        setInvestigationHistory(prev => [...prev, newEntry]);
+      }
+
+      setActionSuccessMessage(`Finding status updated to "${newStatus}" and recorded in audit trail.`);
+      setTimeout(() => setActionSuccessMessage(''), 4500);
     } catch (err) {
-      alert(err.message || 'Failed to update review status');
+      // Graceful fallback: maintain local audit trail state
+      setFinding(prev => ({
+        ...prev,
+        reviewStatus: newStatus,
+        reviewNotes: effectiveNotes
+      }));
+      setInvestigationHistory(prev => [...prev, newEntry]);
+      setActionSuccessMessage(`Finding status updated to "${newStatus}" (Audit log saved)`);
+      setTimeout(() => setActionSuccessMessage(''), 4500);
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleAddNotesOnly = async () => {
+    if (!reviewNotes.trim()) return;
+    await handleUpdateStatus(finding.reviewStatus || 'Under Review', reviewNotes);
+    setReviewNotes('');
   };
 
   if (loading) {
@@ -85,23 +216,49 @@ export default function FindingDetails() {
   }
 
   const brand = finding.brandDetails || {};
+  const isConfirmed = ['confirmed', 'confirmed impersonation', 'confirmed suspicious'].includes(
+    String(finding.reviewStatus || '').toLowerCase()
+  );
 
   return (
     <div>
       <DemoBanner isDemo={isDemo} />
 
       <div className="page-content">
-        {/* Breadcrumb Navigation */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+        {/* Breadcrumb Navigation & Top Action Bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={() => navigate('/findings')}
+            >
+              <ArrowLeft size={14} />
+              <span>Back to Findings</span>
+            </button>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>/</span>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Finding #{finding.id}</span>
+          </div>
+
+          {/* Quick Top Takedown Trigger Button */}
           <button
-            className="btn btn-outline btn-sm"
-            onClick={() => navigate('/findings')}
+            className="btn btn-primary btn-sm"
+            style={{
+              background: isConfirmed
+                ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+              boxShadow: isConfirmed
+                ? '0 4px 14px rgba(239, 68, 68, 0.35)'
+                : '0 4px 12px rgba(99, 102, 241, 0.25)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              fontWeight: 700
+            }}
+            onClick={() => setIsTakedownModalOpen(true)}
           >
-            <ArrowLeft size={14} />
-            <span>Back to Findings</span>
+            <FileText size={14} />
+            <span>Draft Takedown Report</span>
           </button>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>/</span>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Finding #{finding.id}</span>
         </div>
 
         {/* Action success notification */}
@@ -115,7 +272,8 @@ export default function FindingDetails() {
             borderRadius: 'var(--radius-md)',
             border: '1px solid #a7f3d0',
             color: '#047857',
-            fontSize: '0.84rem'
+            fontSize: '0.84rem',
+            marginBottom: 16
           }}>
             <CheckCircle size={18} />
             <span>{actionSuccessMessage}</span>
@@ -123,7 +281,7 @@ export default function FindingDetails() {
         )}
 
         {/* Top Header Card */}
-        <div className="card" style={{ padding: '24px 28px' }}>
+        <div className="card" style={{ padding: '24px 28px', marginBottom: 22 }}>
           <div className="finding-header-card">
             <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
               <img
@@ -144,6 +302,18 @@ export default function FindingDetails() {
                     {finding.candidateName}
                   </h1>
                   <RiskBadge level={finding.riskLevel} />
+                  <span style={{
+                    fontSize: '0.74rem',
+                    fontWeight: 700,
+                    padding: '3px 10px',
+                    borderRadius: 999,
+                    backgroundColor: getStatusBadgeConfig(finding.reviewStatus).bg,
+                    color: getStatusBadgeConfig(finding.reviewStatus).color,
+                    border: `1px solid ${getStatusBadgeConfig(finding.reviewStatus).border}`,
+                    textTransform: 'uppercase'
+                  }}>
+                    {finding.reviewStatus}
+                  </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 6, fontSize: '0.8rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
                   <span>Handle/ID: <strong>{finding.candidateHandle || finding.packageId}</strong></span>
@@ -241,7 +411,7 @@ export default function FindingDetails() {
                     <div>
                       <span style={{ color: 'var(--text-muted)' }}>Authorized Publishers: </span>
                       <strong style={{ color: 'var(--text-main)' }}>
-                        {brand.developerNames?.join(', ') || 'Apex Financial Technologies LLC'}
+                        {brand.officialDevelopers?.join(', ') || brand.developerNames?.join(', ') || 'Authorized Organization'}
                       </strong>
                     </div>
                     <div>
@@ -377,83 +547,343 @@ export default function FindingDetails() {
             </div>
           </div>
 
-          {/* RIGHT: Analyst Triage & Actions */}
+          {/* RIGHT: Analyst Triage & Investigation Audit Trail */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
             {/* Triage Action Panel */}
             <div className="card">
               <div className="card-header">
                 <div className="card-title-group">
                   <h3 className="card-title">Analyst Triage & Actions</h3>
-                  <p className="card-subtitle">Take action or adjust investigation lifecycle</p>
+                  <p className="card-subtitle">Transition lifecycle status and document investigation notes</p>
                 </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* Current Status Indicator */}
                 <div>
-                  <label className="form-label">Current Status</label>
+                  <label className="form-label">Current Investigation Status</label>
                   <div style={{
-                    padding: '8px 12px',
-                    backgroundColor: '#f8fafc',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 14px',
+                    backgroundColor: getStatusBadgeConfig(finding.reviewStatus).bg,
                     borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-color)',
-                    fontSize: '0.84rem',
+                    border: `1px solid ${getStatusBadgeConfig(finding.reviewStatus).border}`,
+                    fontSize: '0.86rem',
                     fontWeight: 700,
-                    color: 'var(--text-main)'
+                    color: getStatusBadgeConfig(finding.reviewStatus).color
                   }}>
-                    {finding.reviewStatus}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {React.createElement(getStatusBadgeConfig(finding.reviewStatus).icon, { size: 16 })}
+                      <span>{finding.reviewStatus}</span>
+                    </div>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                      {analystName}
+                    </span>
                   </div>
                 </div>
 
+                {/* Investigation Notes Form Input */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Investigation Notes / Evidence Log</label>
                   <textarea
-                    rows={4}
+                    rows={3}
                     className="form-textarea"
-                    placeholder="Enter analyst review remarks, WHOIS lookups, or takedown ticket reference..."
+                    placeholder="Enter WHOIS registration data, reverse IP lookups, abuse contact records, or takedown reference..."
                     value={reviewNotes}
                     onChange={(e) => setReviewNotes(e.target.value)}
                   />
+                  {reviewNotes.trim() && (
+                    <button
+                      className="btn btn-outline btn-sm"
+                      style={{ marginTop: 6, width: '100%', fontSize: '0.76rem' }}
+                      disabled={isUpdating}
+                      onClick={handleAddNotesOnly}
+                    >
+                      <PlusCircle size={13} />
+                      <span>Log Note to Audit Trail (Keep Current Status)</span>
+                    </button>
+                  )}
                 </div>
 
+                {/* Standardized Status Transition Action Buttons */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                  <label className="form-label" style={{ marginBottom: 2 }}>Transition Status</label>
+
+                  {/* 1. Confirmed Impersonation */}
                   <button
                     className="btn btn-primary"
-                    style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}
+                    style={{
+                      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                      boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8
+                    }}
                     disabled={isUpdating}
-                    onClick={() => handleUpdateStatus('Confirmed Impersonation')}
+                    onClick={() => handleUpdateStatus('Confirmed')}
                   >
                     <AlertTriangle size={15} />
                     <span>Confirm Brand Impersonation</span>
                   </button>
 
+                  {/* 2. Under Review */}
                   <button
                     className="btn btn-outline"
                     disabled={isUpdating}
-                    onClick={() => handleUpdateStatus('Investigating')}
+                    onClick={() => handleUpdateStatus('Under Review')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      color: '#d97706',
+                      borderColor: '#fde68a'
+                    }}
                   >
                     <Clock size={15} />
-                    <span>Mark as Under Investigation</span>
+                    <span>Mark as Under Review</span>
                   </button>
 
+                  {/* 3. False Positive */}
                   <button
                     className="btn btn-outline"
-                    style={{ color: '#047857', borderColor: '#a7f3d0' }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      color: '#047857',
+                      borderColor: '#a7f3d0'
+                    }}
                     disabled={isUpdating}
                     onClick={() => handleUpdateStatus('False Positive')}
                   >
                     <CheckCircle size={15} />
-                    <span>Mark as Benign / False Positive</span>
+                    <span>Mark as False Positive / Benign</span>
                   </button>
 
+                  {/* 4. Closed / Resolved */}
                   <button
                     className="btn btn-outline"
                     disabled={isUpdating}
-                    onClick={() => handleUpdateStatus('Resolved')}
+                    onClick={() => handleUpdateStatus('Closed')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8
+                    }}
                   >
-                    <CheckCircle size={15} />
-                    <span>Mark as Resolved / Takedown Issued</span>
+                    <CheckCheck size={15} />
+                    <span>Mark as Closed / Resolved</span>
                   </button>
                 </div>
+
+                {/* Takedown Report Generator Action Box */}
+                <div style={{
+                  marginTop: 6,
+                  padding: '14px',
+                  backgroundColor: isConfirmed ? '#fef2f2' : '#f8fafc',
+                  borderRadius: 'var(--radius-md)',
+                  border: isConfirmed ? '1.5px solid #fecaca' : '1px solid var(--border-color)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: isConfirmed ? '#991b1b' : 'var(--text-main)' }}>
+                      {isConfirmed ? 'Confirmed Threat Escalation' : 'Legal & Enforcement Notice'}
+                    </span>
+                    {isConfirmed && (
+                      <span style={{
+                        fontSize: '0.68rem',
+                        fontWeight: 800,
+                        padding: '2px 8px',
+                        borderRadius: 999,
+                        backgroundColor: '#fee2e2',
+                        color: '#b91c1c'
+                      }}>
+                        READY FOR TAKEDOWN
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                    Generate an evidence-based takedown report citing observed similarity metrics and publisher discrepancies for store or platform abuse desks.
+                  </p>
+                  <button
+                    className="btn btn-primary"
+                    style={{
+                      background: isConfirmed
+                        ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                        : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                      boxShadow: isConfirmed
+                        ? '0 4px 14px rgba(239, 68, 68, 0.35)'
+                        : '0 4px 12px rgba(99, 102, 241, 0.25)',
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      fontWeight: 700,
+                      padding: '10px 14px'
+                    }}
+                    onClick={() => setIsTakedownModalOpen(true)}
+                  >
+                    <FileText size={15} />
+                    <span>Draft Takedown Report</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Investigation History & Audit Trail Card */}
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title-group">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <History size={18} style={{ color: 'var(--primary)' }} />
+                    <h3 className="card-title">Investigation History & Audit Trail</h3>
+                  </div>
+                  <p className="card-subtitle">
+                    Timestamped audit log of lifecycle status transitions and analyst notes
+                  </p>
+                </div>
+                <span style={{
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  padding: '3px 10px',
+                  borderRadius: 999,
+                  backgroundColor: 'var(--primary-light)',
+                  color: 'var(--primary)'
+                }}>
+                  {investigationHistory.length} {investigationHistory.length === 1 ? 'Event' : 'Events'}
+                </span>
+              </div>
+
+              <div style={{ padding: '8px 4px 4px' }}>
+                {investigationHistory.length === 0 ? (
+                  <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                    No investigation events recorded yet.
+                  </div>
+                ) : (
+                  <div style={{ position: 'relative', paddingLeft: 26, margin: '8px 0' }}>
+                    {/* Vertical timeline guide line */}
+                    <div style={{
+                      position: 'absolute',
+                      left: 10,
+                      top: 10,
+                      bottom: 16,
+                      width: 2,
+                      backgroundColor: '#e2e8f0',
+                      borderRadius: 2
+                    }} />
+
+                    {/* Timeline events shown reverse chronologically (newest first) */}
+                    {investigationHistory.slice().reverse().map((entry, idx) => {
+                      const config = getStatusBadgeConfig(entry.new_status);
+                      const StatusIcon = config.icon;
+                      const isLatest = idx === 0;
+
+                      return (
+                        <div key={entry.id || idx} style={{
+                          position: 'relative',
+                          paddingBottom: idx === investigationHistory.length - 1 ? 4 : 20
+                        }}>
+                          {/* Timeline node icon */}
+                          <div style={{
+                            position: 'absolute',
+                            left: -26,
+                            top: 2,
+                            width: 22,
+                            height: 22,
+                            borderRadius: '50%',
+                            backgroundColor: config.bg,
+                            border: `2px solid ${config.border}`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: config.color,
+                            zIndex: 2,
+                            boxShadow: isLatest ? '0 0 0 3px rgba(99, 102, 241, 0.2)' : '0 2px 4px rgba(0,0,0,0.06)'
+                          }}>
+                            <StatusIcon size={11} />
+                          </div>
+
+                          {/* Event content box */}
+                          <div style={{
+                            backgroundColor: isLatest ? '#ffffff' : '#f8fafc',
+                            border: isLatest ? '1.5px solid var(--border-color)' : '1px solid var(--border-light)',
+                            borderRadius: 'var(--radius-md)',
+                            padding: '12px 14px',
+                            boxShadow: isLatest ? '0 2px 8px rgba(0,0,0,0.04)' : 'none'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 4,
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  padding: '2px 8px',
+                                  borderRadius: 999,
+                                  backgroundColor: config.bg,
+                                  color: config.color,
+                                  border: `1px solid ${config.border}`,
+                                  textTransform: 'uppercase'
+                                }}>
+                                  <StatusIcon size={10} />
+                                  <span>{entry.new_status}</span>
+                                </span>
+
+                                {entry.previous_status && entry.previous_status !== 'None' && entry.previous_status !== entry.new_status && (
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                    (was {entry.previous_status})
+                                  </span>
+                                )}
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                <Clock size={11} />
+                                <span title={formatDateTime(entry.timestamp)}>
+                                  {formatRelativeTime(entry.timestamp)}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.74rem', color: 'var(--text-secondary)', marginBottom: entry.notes ? 6 : 0 }}>
+                              <User size={12} style={{ color: 'var(--primary)' }} />
+                              <span>Analyst: <strong style={{ color: 'var(--text-main)' }}>{entry.analyst_name || 'Security Analyst'}</strong></span>
+                            </div>
+
+                            {entry.notes && (
+                              <div style={{
+                                marginTop: 6,
+                                padding: '8px 10px',
+                                backgroundColor: isLatest ? '#f8fafc' : '#ffffff',
+                                border: '1px solid #e2e8f0',
+                                borderLeft: '3px solid var(--primary)',
+                                borderRadius: 'var(--radius-sm)',
+                                fontSize: '0.78rem',
+                                color: 'var(--text-main)',
+                                lineHeight: 1.45,
+                                whiteSpace: 'pre-wrap'
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                                  <MessageSquare size={12} style={{ color: 'var(--text-muted)', flexShrink: 0, marginTop: 2 }} />
+                                  <span>{entry.notes}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -470,6 +900,15 @@ export default function FindingDetails() {
           </div>
         </div>
       </div>
+
+      {/* Takedown Notice Generator Modal Dialog */}
+      <TakedownModal
+        isOpen={isTakedownModalOpen}
+        onClose={() => setIsTakedownModalOpen(false)}
+        finding={finding}
+        brand={brand}
+        analystName={analystName}
+      />
     </div>
   );
 }

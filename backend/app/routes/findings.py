@@ -68,7 +68,7 @@ def get_finding(
     user: Optional[Dict[str, Any]] = Depends(get_optional_user),
 ):
     """
-    Retrieve full details, evidence breakdown, and candidate metadata for a finding.
+    Retrieve full details, evidence breakdown, candidate metadata, and audit trail for a finding.
     """
     user_id = user["id"] if user else None
     finding = FindingService.get_by_id(db, finding_id, user_id=user_id)
@@ -89,7 +89,8 @@ def update_finding_status(
     user: Optional[Dict[str, Any]] = Depends(get_optional_user),
 ):
     """
-    Update human analyst review label (New, Under Review, Confirmed Suspicious, False Positive, Resolved).
+    Update human analyst review label (New, Under Review, Confirmed, False Positive, Closed)
+    and append an investigation audit log entry.
     """
     user_id = user["id"] if user else None
     finding = FindingService.get_by_id(db, finding_id, user_id=user_id)
@@ -101,8 +102,13 @@ def update_finding_status(
 
     try:
         new_status = status_update.get_status_label()
+        notes = status_update.get_notes()
+        analyst = status_update.get_analyst_name()
+        if user and user.get("email") and (not analyst or analyst == "Security Analyst"):
+            analyst = user.get("email").split("@")[0]
+
         updated = FindingService.update_review_status(
-            db, finding_id, new_status
+            db, finding_id, new_status, notes=notes, analyst_name=analyst
         )
         if not updated:
             raise HTTPException(

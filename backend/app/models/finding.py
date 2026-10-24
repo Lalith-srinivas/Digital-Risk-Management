@@ -32,3 +32,31 @@ class Finding(Base):
     brand = relationship("Brand", back_populates="findings")
     candidate = relationship("Candidate", back_populates="findings")
     scan = relationship("Scan", back_populates="findings")
+
+    @property
+    def investigation_history(self) -> list:
+        if isinstance(self.evidence, dict) and "investigation_history" in self.evidence and self.evidence["investigation_history"]:
+            return self.evidence["investigation_history"]
+        created_str = (
+            self.created_at.isoformat()
+            if hasattr(self.created_at, "isoformat")
+            else str(self.created_at or utc_now().isoformat())
+        )
+        return [
+            {
+                "id": f"hist-init-{str(self.id)}",
+                "timestamp": created_str,
+                "previous_status": "None",
+                "new_status": self.review_status or "New",
+                "analyst_name": "SOC 360 Surveillance Engine",
+                "notes": "Candidate automatically flagged by heuristic detection engine.",
+            }
+        ]
+
+    @investigation_history.setter
+    def investigation_history(self, val: list):
+        if not isinstance(self.evidence, dict):
+            self.evidence = {}
+        updated_evidence = dict(self.evidence)
+        updated_evidence["investigation_history"] = val
+        self.evidence = updated_evidence
