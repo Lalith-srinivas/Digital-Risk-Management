@@ -61,3 +61,22 @@ CREATE POLICY "Users can only access their own findings"
     ON findings FOR ALL
     USING (auth.uid() = user_id)
     WITH CHECK (auth.uid() = user_id);
+
+-- 8. Data API Access Grants (Supabase PostgREST & supabase-js compatibility)
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+
+GRANT ALL ON TABLE public.brands TO postgres, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.brands TO authenticated;
+GRANT SELECT ON TABLE public.brands TO anon;
+
+GRANT ALL ON TABLE public.candidates TO postgres, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.candidates TO authenticated;
+GRANT SELECT ON TABLE public.candidates TO anon;
+
+GRANT ALL ON TABLE public.scans TO postgres, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.scans TO authenticated;
+GRANT SELECT ON TABLE public.scans TO anon;
+
+GRANT ALL ON TABLE public.findings TO postgres, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.findings TO authenticated;
+GRANT SELECT ON TABLE public.findings TO anon;

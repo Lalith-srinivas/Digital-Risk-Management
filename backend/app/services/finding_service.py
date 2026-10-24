@@ -13,9 +13,12 @@ def utc_now() -> datetime:
 ALLOWED_REVIEW_STATUSES = {
     "New",
     "Under Review",
+    "Confirmed",
+    "Confirmed Impersonation",
     "Confirmed Suspicious",
     "False Positive",
     "Resolved",
+    "Closed",
 }
 
 
@@ -81,7 +84,13 @@ class FindingService:
         return findings, total
 
     @staticmethod
-    def update_review_status(db: Session, finding_id: uuid.UUID, new_status: str) -> Optional[Finding]:
+    def update_review_status(
+        db: Session,
+        finding_id: uuid.UUID,
+        new_status: str,
+        notes: str = "",
+        analyst_name: str = "Security Analyst",
+    ) -> Optional[Finding]:
         if new_status not in ALLOWED_REVIEW_STATUSES:
             raise ValueError(f"Invalid review status: '{new_status}'. Allowed values: {sorted(ALLOWED_REVIEW_STATUSES)}")
 
@@ -89,8 +98,23 @@ class FindingService:
         if not finding:
             return None
 
+        prev_status = finding.review_status or "New"
         finding.review_status = new_status
         finding.updated_at = utc_now()
+
+        # Record audit trail entry
+        history_entry = {
+            "id": f"hist-{uuid.uuid4().hex[:8]}",
+            "timestamp": utc_now().isoformat(),
+            "previous_status": prev_status,
+            "new_status": new_status,
+            "analyst_name": analyst_name or "Security Analyst",
+            "notes": (notes or "").strip(),
+        }
+        current_history = list(finding.investigation_history)
+        current_history.append(history_entry)
+        finding.investigation_history = current_history
+
         db.commit()
         db.refresh(finding)
         return finding

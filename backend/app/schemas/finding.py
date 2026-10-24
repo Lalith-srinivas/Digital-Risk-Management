@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field, ConfigDict
 from app.schemas.common import ReviewStatusEnum, RiskLevelEnum, SourceTypeEnum
 from app.schemas.candidate import CandidateResponse
@@ -11,20 +11,34 @@ class FindingStatusUpdate(BaseModel):
     reviewStatus: Optional[str] = Field(None, description="CamelCase review status label")
     reviewNotes: Optional[str] = Field(None, description="Analyst review notes")
     review_notes: Optional[str] = Field(None, description="Analyst review notes")
+    notes: Optional[str] = Field(None, description="Analyst review remarks")
+    analyst_name: Optional[str] = Field(None, description="Analyst who performed the update")
+    analystName: Optional[str] = Field(None, description="CamelCase analyst name")
+
+    model_config = ConfigDict(extra="ignore")
 
     def get_status_label(self) -> str:
         val = (self.review_status or self.reviewStatus or "New").strip()
         mapping = {
             "needs review": "Under Review",
             "under review": "Under Review",
+            "investigating": "Under Review",
             "confirmed suspicious": "Confirmed Suspicious",
-            "confirmed": "Confirmed Suspicious",
+            "confirmed": "Confirmed",
+            "confirmed impersonation": "Confirmed Impersonation",
             "benign": "False Positive",
             "false positive": "False Positive",
             "resolved": "Resolved",
+            "closed": "Closed",
             "new": "New",
         }
         return mapping.get(val.lower(), val)
+
+    def get_notes(self) -> str:
+        return (self.notes or self.reviewNotes or self.review_notes or "").strip()
+
+    def get_analyst_name(self) -> str:
+        return (self.analyst_name or self.analystName or "Security Analyst").strip()
 
 
 class FindingResponse(BaseModel):
@@ -42,5 +56,6 @@ class FindingResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     candidate: Optional[CandidateResponse] = None
+    investigation_history: List[Dict[str, Any]] = Field(default_factory=list, description="Audit trail of investigation history")
 
     model_config = ConfigDict(from_attributes=True)

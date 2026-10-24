@@ -154,6 +154,51 @@ def test_get_finding_by_id(client, seeded_findings):
     assert data["id"] == finding_id
     assert "evidence" in data
     assert "candidate" in data
+    assert "investigation_history" in data
+    assert len(data["investigation_history"]) >= 1
+
+
+def test_investigation_audit_trail_logging(client, seeded_findings):
+    list_res = client.get("/findings")
+    finding_id = list_res.json()["items"][0]["id"]
+
+    # Initial finding should have base history entry
+    get_res = client.get(f"/findings/{finding_id}")
+    initial_history = get_res.json().get("investigation_history", [])
+    assert len(initial_history) >= 1
+
+    # Update to Under Review with notes
+    patch1 = client.patch(
+        f"/findings/{finding_id}/status",
+        json={
+            "review_status": "Under Review",
+            "notes": "Analyst verified suspicious WHOIS creation date",
+            "analyst_name": "Senior Investigator Alex",
+        },
+    )
+    assert patch1.status_code == 200
+    history1 = patch1.json()["investigation_history"]
+    assert len(history1) >= 2
+    latest1 = history1[-1]
+    assert latest1["new_status"] == "Under Review"
+    assert latest1["analyst_name"] == "Senior Investigator Alex"
+    assert "WHOIS" in latest1["notes"]
+
+    # Update to Confirmed Impersonation
+    patch2 = client.patch(
+        f"/findings/{finding_id}/status",
+        json={
+            "review_status": "Confirmed",
+            "notes": "Confirmed malicious phishing clone, preparing takedown dossier",
+            "analyst_name": "Senior Investigator Alex",
+        },
+    )
+    assert patch2.status_code == 200
+    history2 = patch2.json()["investigation_history"]
+    assert len(history2) >= 3
+    latest2 = history2[-1]
+    assert latest2["new_status"] in ["Confirmed", "Confirmed Impersonation", "Confirmed Suspicious"]
+    assert "takedown dossier" in latest2["notes"]
 
 
 def test_get_unknown_finding_id(client):
