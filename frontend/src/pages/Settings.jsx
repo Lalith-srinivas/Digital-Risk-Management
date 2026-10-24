@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   User,
@@ -12,12 +12,18 @@ import {
   Building,
   Clock,
   Sparkles,
+  Eye,
+  EyeOff,
+  Lock,
+  Loader2,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import Modal from '../components/Modal';
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { user, isGuest, logout, resetPassword } = useAuth();
+  const { user, isGuest, logout, resetPassword, updatePassword } = useAuth();
 
   const [fullName, setFullName] = useState(
     user?.user_metadata?.full_name || user?.email?.split('@')[0] || (isGuest ? 'Guest Analyst' : 'Security Analyst')
@@ -26,6 +32,25 @@ export default function Settings() {
   const [savedNotice, setSavedNotice] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const [errorNotice, setErrorNotice] = useState(null);
+
+  // Direct Change Password Modal state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [passwordUpdating, setPasswordUpdating] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState(null);
+  const [passwordError, setPasswordError] = useState(null);
+  const [emailCooldown, setEmailCooldown] = useState(0);
+
+  useEffect(() => {
+    if (emailCooldown <= 0) return;
+    const interval = setInterval(() => {
+      setEmailCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [emailCooldown]);
 
   const userEmail = user?.email || (isGuest ? 'guest@soc360.local (In-Memory Session)' : 'analyst@enterprise.com');
   const userInitials = fullName
@@ -41,16 +66,72 @@ export default function Settings() {
     setTimeout(() => setSavedNotice(false), 3000);
   };
 
+  const handleDirectPasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match. Please verify and re-enter.');
+      return;
+    }
+
+    setPasswordUpdating(true);
+    try {
+      const res = await updatePassword(newPassword);
+      if (res?.error) {
+        if (res.error.status === 429 || res.error.message?.toLowerCase().includes('rate limit')) {
+          setPasswordError('Rate limit exceeded: Please wait a moment before trying again.');
+        } else {
+          setPasswordError(res.error.message || 'Failed to update password.');
+        }
+      } else {
+        setPasswordSuccess('Password successfully updated! Your new credentials are now active.');
+        setNewPassword('');
+        setConfirmPassword('');
+        setTimeout(() => {
+          setShowPasswordModal(false);
+          setPasswordSuccess(null);
+        }, 2000);
+      }
+    } catch (err) {
+      setPasswordError(err.message || 'An unexpected error occurred.');
+    } finally {
+      setPasswordUpdating(false);
+    }
+  };
+
   const handlePasswordReset = async () => {
+    if (emailCooldown > 0) return;
     if (!user?.email) {
       setErrorNotice('Password reset requires an active email-authenticated account.');
       return;
     }
     setErrorNotice(null);
+    setResetSent(false);
+
     try {
-      await resetPassword(user.email);
-      setResetSent(true);
-      setTimeout(() => setResetSent(false), 4000);
+      const res = await resetPassword(user.email);
+      if (res?.error) {
+        if (
+          res.error.status === 429 ||
+          res.error.message?.toLowerCase().includes('security purposes') ||
+          res.error.message?.toLowerCase().includes('rate limit')
+        ) {
+          setErrorNotice('Rate limit reached: For security, password reset emails can only be sent once every 60 seconds. Please check your inbox or wait before retrying.');
+          setEmailCooldown(60);
+        } else {
+          setErrorNotice(res.error.message || 'Failed to dispatch reset link.');
+        }
+      } else {
+        setResetSent(true);
+        setEmailCooldown(60);
+        setTimeout(() => setResetSent(false), 5000);
+      }
     } catch (err) {
       setErrorNotice(err.message || 'Failed to dispatch reset link.');
     }
@@ -246,29 +327,60 @@ export default function Settings() {
           Security & Access Credentials
         </h3>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid #f1f5f9' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <div style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>Password Management</div>
-            <div style={{ fontSize: '12px', color: '#64748b' }}>Reset or update your account password via verified email link</div>
+            <div style={{ fontSize: '12px', color: '#64748b' }}>Update your security credentials directly or request a recovery link</div>
           </div>
-          <button
-            onClick={handlePasswordReset}
-            style={{
-              padding: '7px 14px',
-              fontSize: '13px',
-              fontWeight: '600',
-              color: '#4f46e5',
-              background: '#f5f3ff',
-              border: '1px solid #ddd6fe',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <Key size={14} /> Change Password
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setPasswordError(null);
+                setPasswordSuccess(null);
+                setNewPassword('');
+                setConfirmPassword('');
+                setShowPasswordModal(true);
+              }}
+              style={{
+                padding: '7px 14px',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: '#ffffff',
+                background: '#4f46e5',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <Key size={14} /> Change Password
+            </button>
+
+            <button
+              type="button"
+              onClick={handlePasswordReset}
+              disabled={emailCooldown > 0}
+              title={emailCooldown > 0 ? `Please wait ${emailCooldown}s before requesting another reset email` : 'Send a recovery email'}
+              style={{
+                padding: '7px 14px',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: emailCooldown > 0 ? '#94a3b8' : '#475569',
+                background: emailCooldown > 0 ? '#f1f5f9' : '#f8fafc',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                cursor: emailCooldown > 0 ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <Mail size={14} /> {emailCooldown > 0 ? `Resend (${emailCooldown}s)` : 'Email Reset Link'}
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid #f1f5f9' }}>
@@ -330,6 +442,188 @@ export default function Settings() {
           <span style={{ fontWeight: '600', color: '#334155' }}>Backend Status:</span> Connected (FastAPI + Supabase)
         </div>
       </div>
+
+      {/* Direct Change Password Modal */}
+      <Modal
+        isOpen={showPasswordModal}
+        onClose={() => {
+          if (!passwordUpdating) setShowPasswordModal(false);
+        }}
+        title="Change Account Password"
+      >
+        <form onSubmit={handleDirectPasswordChange} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ margin: 0, fontSize: '13px', color: '#64748b', lineHeight: 1.5 }}>
+            Update authentication password for <strong>{userEmail}</strong>. Your updated credentials will be active immediately.
+          </p>
+
+          {passwordSuccess && (
+            <div style={{
+              background: '#f0fdf4',
+              border: '1px solid #86efac',
+              color: '#15803d',
+              borderRadius: '8px',
+              padding: '10px 14px',
+              fontSize: '13px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              <CheckCircle2 size={16} />
+              <span>{passwordSuccess}</span>
+            </div>
+          )}
+
+          {passwordError && (
+            <div style={{
+              background: '#fef2f2',
+              border: '1px solid #fca5a5',
+              color: '#b91c1c',
+              borderRadius: '8px',
+              padding: '10px 14px',
+              fontSize: '13px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              <AlertCircle size={16} />
+              <span>{passwordError}</span>
+            </div>
+          )}
+
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>
+              New Password
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showNewPass ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="At least 6 characters"
+                required
+                minLength={6}
+                style={{
+                  width: '100%',
+                  padding: '9px 38px 9px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '14px',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPass(!showNewPass)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                }}
+                tabIndex={-1}
+              >
+                {showNewPass ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>
+              Confirm New Password
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showConfirmPass ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter your new password"
+                required
+                minLength={6}
+                style={{
+                  width: '100%',
+                  padding: '9px 38px 9px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '14px',
+                  boxSizing: 'border-box',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPass(!showConfirmPass)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748b',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                }}
+                tabIndex={-1}
+              >
+                {showConfirmPass ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+            <button
+              type="button"
+              onClick={() => setShowPasswordModal(false)}
+              disabled={passwordUpdating}
+              style={{
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: '#475569',
+                background: '#f1f5f9',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={passwordUpdating}
+              style={{
+                padding: '8px 18px',
+                fontSize: '13px',
+                fontWeight: '700',
+                color: '#ffffff',
+                background: passwordUpdating ? '#818cf8' : '#4f46e5',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: passwordUpdating ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              {passwordUpdating ? (
+                <>
+                  <Loader2 size={14} className="spin" /> Updating...
+                </>
+              ) : (
+                <>
+                  <Key size={14} /> Update Password
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

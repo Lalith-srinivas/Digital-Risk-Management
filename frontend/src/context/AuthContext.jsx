@@ -6,6 +6,7 @@ import {
   signInUser,
   signOutUser,
   resetPasswordUser,
+  updatePasswordUser,
   getCurrentSession,
 } from '../services/supabase';
 
@@ -107,6 +108,10 @@ export function AuthProvider({ children }) {
     return await resetPasswordUser(email);
   };
 
+  const updatePassword = async (newPassword) => {
+    return await updatePasswordUser(newPassword);
+  };
+
   const continueAsGuest = () => {
     setIsGuest(true);
   };
@@ -124,6 +129,7 @@ export function AuthProvider({ children }) {
         signup,
         logout,
         resetPassword,
+        updatePassword,
         continueAsGuest,
       }}
     >

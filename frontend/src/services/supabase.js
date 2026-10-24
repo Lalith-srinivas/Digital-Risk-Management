@@ -100,9 +100,41 @@ export async function resetPasswordUser(email) {
     return { data: {}, error: null };
   }
 
-  return await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/reset-password`,
-  });
+  try {
+    const res = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    return res;
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}
+
+export async function updatePasswordUser(newPassword) {
+  if (!isSupabaseConfigured) {
+    const stored = localStorage.getItem('soc360_demo_session');
+    if (stored) {
+      try {
+        const session = JSON.parse(stored);
+        if (session && session.user) {
+          session.user.updated_at = new Date().toISOString();
+          localStorage.setItem('soc360_demo_session', JSON.stringify(session));
+        }
+      } catch (e) {
+        console.warn('Demo session update:', e);
+      }
+    }
+    return { data: { user: { email: 'analyst@enterprise.com' } }, error: null };
+  }
+
+  try {
+    const res = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    return res;
+  } catch (err) {
+    return { data: null, error: err };
+  }
 }
 
 export async function getCurrentSession() {

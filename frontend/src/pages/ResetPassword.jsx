@@ -19,8 +19,12 @@ export default function ResetPassword() {
 
     try {
       const res = await resetPassword(email.trim());
-      if (res.error) {
-        setError(res.error.message || 'Failed to send password reset email.');
+      if (res?.error) {
+        if (res.error.status === 429 || res.error.message?.toLowerCase().includes('security purposes') || res.error.message?.toLowerCase().includes('rate limit')) {
+          setError('Rate limit reached: For security, password recovery emails can only be sent once every 60 seconds. Please check your inbox or wait before retrying.');
+        } else {
+          setError(res.error.message || 'Failed to send password reset email.');
+        }
       } else {
         setSent(true);
       }
