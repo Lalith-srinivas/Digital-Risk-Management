@@ -14,6 +14,8 @@ import {
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
+import NotificationDrawer from './NotificationDrawer';
+
 export default function Header({
   title = 'Dashboard',
   subtitle = 'Security Operations Center — Digital Risk Overview',
@@ -25,6 +27,7 @@ export default function Header({
   const userInitials = displayName.substring(0, 2).toUpperCase() || 'SA';
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadAlertsCount, setUnreadAlertsCount] = useState(0);
   const [connectionStatus, setConnectionStatus] = useState({
     connected: false,
     status: 'checking'
@@ -64,12 +67,6 @@ export default function Header({
       navigate(`/findings?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
-
-  const sampleNotifications = [
-    { id: 1, title: 'High-risk clone identified', text: 'Apex Mobile Banking Pro detected on unofficial store.', time: '12m ago', type: 'high' },
-    { id: 2, title: 'Social handle spike', text: '3 new handles matching NovaPay keywords registered.', time: '1h ago', type: 'medium' },
-    { id: 3, title: 'Scan completed', text: 'Weekly brand surface scan finished with 5 findings.', time: '3h ago', type: 'info' }
-  ];
 
   return (
     <header className="main-header">
@@ -126,82 +123,46 @@ export default function Header({
         </form>
 
         <div className="header-actions" style={{ position: 'relative' }}>
-          {/* Notification Button & Flyout */}
+          {/* Notification Button & Flyout with Deduplicated Alerts */}
           <button
             className="icon-btn"
+            style={{ position: 'relative' }}
             onClick={() => setShowNotifications(!showNotifications)}
-            aria-label="Notifications"
+            aria-label="High-Risk Alerts"
+            title={unreadAlertsCount > 0 ? `${unreadAlertsCount} unread high-risk alerts` : 'High-Risk Alerts'}
           >
             <Bell size={18} />
-            <span className="badge-dot" />
+            {unreadAlertsCount > 0 ? (
+              <span style={{
+                position: 'absolute',
+                top: '-4px',
+                right: '-4px',
+                backgroundColor: '#ef4444',
+                color: '#ffffff',
+                fontSize: '0.62rem',
+                fontWeight: 800,
+                minWidth: '16px',
+                height: '16px',
+                borderRadius: '999px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0 4px',
+                boxShadow: '0 0 0 2px #ffffff',
+                lineHeight: 1
+              }}>
+                {unreadAlertsCount > 9 ? '9+' : unreadAlertsCount}
+              </span>
+            ) : (
+              <span className="badge-dot" style={{ opacity: 0.3 }} />
+            )}
           </button>
 
-          {showNotifications && (
-            <div style={{
-              position: 'absolute',
-              top: '48px',
-              right: '0',
-              width: 'min(320px, calc(100vw - 32px))',
-              maxWidth: 'calc(100vw - 32px)',
-              backgroundColor: '#ffffff',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-lg)',
-              border: '1px solid var(--border-color)',
-              zIndex: 50,
-              padding: '16px',
-              animation: 'scaleIn 0.15s ease'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>Security Alerts</span>
-                <button
-                  onClick={() => setShowNotifications(false)}
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  <X size={14} />
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {sampleNotifications.map(n => (
-                  <div
-                    key={n.id}
-                    onClick={() => {
-                      setShowNotifications(false);
-                      navigate('/findings');
-                    }}
-                    style={{
-                      padding: '10px',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: n.type === 'high' ? '#fef2f2' : '#f8fafc',
-                      cursor: 'pointer',
-                      border: n.type === 'high' ? '1px solid #fecaca' : '1px solid var(--border-light)'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: n.type === 'high' ? '#b91c1c' : 'var(--text-main)' }}>
-                        {n.title}
-                      </span>
-                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{n.time}</span>
-                    </div>
-                    <p style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: 2 }}>{n.text}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ marginTop: 12, textAlign: 'center', borderTop: '1px solid var(--border-light)', paddingTop: 8 }}>
-                <button
-                  className="btn btn-outline btn-sm"
-                  style={{ width: '100%' }}
-                  onClick={() => {
-                    setShowNotifications(false);
-                    navigate('/findings');
-                  }}
-                >
-                  View All Findings
-                </button>
-              </div>
-            </div>
-          )}
+          <NotificationDrawer
+            isOpen={showNotifications}
+            onClose={() => setShowNotifications(false)}
+            onUnreadCountChange={setUnreadAlertsCount}
+          />
 
           {/* Profile Badge */}
           <div
