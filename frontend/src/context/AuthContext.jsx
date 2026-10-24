@@ -29,6 +29,18 @@ export function AuthProvider({ children }) {
           setUser(initialUser);
           setIsGuest(false);
         } else {
+          const stored = localStorage.getItem('soc360_demo_session');
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              if (parsed?.user) {
+                setSession(parsed);
+                setUser(parsed.user);
+                setIsGuest(false);
+                return;
+              }
+            } catch (e) {}
+          }
           setIsGuest(true);
         }
       } catch (err) {
