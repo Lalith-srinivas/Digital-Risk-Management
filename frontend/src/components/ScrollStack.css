@@ -1,0 +1,154 @@
+.scroll-stack {
+  position: relative;
+  width: 100%;
+}
+
+.scroll-stack--contained {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scroll-stack--contained::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-stack--contained::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 140, 248, 0.5);
+}
+
+.scroll-stack__inner {
+  position: relative;
+  padding-inline: clamp(0.75rem, 3%, 2.5rem);
+}
+
+.scroll-stack__slot {
+  position: sticky;
+}
+
+.scroll-stack-card {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  height: 22rem;
+  padding: 0;
+  border-radius: 24px;
+  background: #141122;
+  color: #f8fafc;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 -12px 40px -16px rgba(0, 0, 0, 0.45),
+    0 24px 48px -24px rgba(0, 0, 0, 0.5);
+  transform-origin: 50% 0;
+  will-change: transform;
+}
+
+.scroll-stack-card__shade {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #000;
+  opacity: var(--scroll-stack-dim, 0);
+  pointer-events: none;
+}
+
+/* Capabilities Custom Stack Cards */
+.capabilities-stack-card {
+  height: 350px !important;
+  border-radius: 24px !important;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.capabilities-stack-card.card-social {
+  background: linear-gradient(135deg, #0e0b24 0%, #1e1945 50%, #15132d 100%) !important;
+  border-color: rgba(129, 140, 248, 0.35) !important;
+  box-shadow: 0 20px 50px -10px rgba(79, 70, 229, 0.35) !important;
+}
+
+.capabilities-stack-card.card-appstore {
+  background: linear-gradient(135deg, #18092a 0%, #301047 50%, #1d0a30 100%) !important;
+  border-color: rgba(192, 132, 252, 0.35) !important;
+  box-shadow: 0 20px 50px -10px rgba(168, 85, 247, 0.35) !important;
+}
+
+.capabilities-stack-card.card-risk {
+  background: linear-gradient(135deg, #14120e 0%, #261b11 50%, #181410 100%) !important;
+  border-color: rgba(251, 191, 36, 0.35) !important;
+  box-shadow: 0 20px 50px -10px rgba(245, 158, 11, 0.3) !important;
+}
+
+.capabilities-stack-card.card-reports {
+  background: linear-gradient(135deg, #051912 0%, #0a2d20 50%, #061e16 100%) !important;
+  border-color: rgba(52, 211, 153, 0.35) !important;
+  box-shadow: 0 20px 50px -10px rgba(16, 185, 129, 0.35) !important;
+}
+
+.stack-card-content {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  align-items: stretch;
+}
+
+.stack-card-text {
+  flex: 1;
+  max-width: 440px;
+  padding: 32px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  z-index: 1;
+}
+
+.stack-card-img-wrap {
+  flex: 1.3;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 24px 20px 0;
+  z-index: 1;
+}
+
+.stack-card-img-wrap img {
+  width: 100%;
+  height: 100%;
+  max-height: 295px;
+  object-fit: cover;
+  object-position: top left;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+  transition: transform 0.35s ease, opacity 0.25s ease;
+}
+
+.capabilities-stack-card:hover .stack-card-img-wrap img {
+  transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+  .capabilities-stack-card {
+    height: auto !important;
+    min-height: 380px !important;
+  }
+  .stack-card-content {
+    flex-direction: column;
+  }
+  .stack-card-text {
+    max-width: 100%;
+    padding: 24px 20px 12px;
+  }
+  .stack-card-img-wrap {
+    height: 180px;
+    padding: 0 20px 20px;
+  }
+  .stack-card-img-wrap img {
+    max-height: 100%;
+    object-position: top center;
+  }
+}
+

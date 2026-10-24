@@ -16,6 +16,7 @@ import {
   Shield,
 } from 'lucide-react';
 import StippleSphere from '../components/StippleSphere';
+import ScrollStack, { ScrollStackItem } from '../components/ScrollStack';
 
 
 export default function LandingPage() {
@@ -1113,91 +1114,84 @@ export default function LandingPage() {
           </p>
         </div>
 
-        {/* Bento Grid */}
-        <div className="bento-grid">
+        {/* Stacked Cards Scroll Effect */}
+        <div style={{ height: 600, maxWidth: '1120px', margin: '0 auto', position: 'relative' }}>
+          <ScrollStack
+            itemDistance={120}
+            itemStackDistance={24}
+            stackPosition="40px"
+            itemScale={0.04}
+            baseScale={0.88}
+            dimAmount={0.25}
+          >
+            {/* Card 1 – Social Impersonation */}
+            <ScrollStackItem itemClassName="capabilities-stack-card card-social">
+              <div className="stack-card-content">
+                <div className="stack-card-text">
+                  <div className="bento-step-num" style={{ color: '#818cf8' }}>01</div>
+                  <div className="bento-cat-tag" style={{ color: '#818cf8' }}>DETECT</div>
+                  <h3 className="bento-title">Social Impersonation Detection</h3>
+                  <p className="bento-desc">
+                    Detect rogue handles, typosquats, unicode homoglyphs, and fake VIP profiles across X, Telegram, and Instagram using RapidFuzz lexical matching.
+                  </p>
+                </div>
+                <div className="stack-card-img-wrap">
+                  <img src="/social_card.jpg" alt="Social threat monitor dashboard" />
+                </div>
+              </div>
+            </ScrollStackItem>
 
-          {/* Card 1 – Social Impersonation (2-col wide) */}
-          <div className="bento-card bento-card-1">
-            <div className="bento-text-block">
-              <div className="bento-step-num" style={{ color: '#818cf8' }}>01</div>
-              <div className="bento-cat-tag" style={{ color: '#818cf8' }}>DETECT</div>
-              <h3 className="bento-title">Social Impersonation Detection</h3>
-              <p className="bento-desc">
-                Detect rogue handles, typosquats, unicode homoglyphs, and fake VIP profiles across X, Telegram, and Instagram using RapidFuzz lexical matching.
-              </p>
-            </div>
-            <div className="bento-img-block">
-              <img src="/social_card.jpg" alt="Social threat monitor dashboard" />
-            </div>
-          </div>
+            {/* Card 2 – App Store */}
+            <ScrollStackItem itemClassName="capabilities-stack-card card-appstore">
+              <div className="stack-card-content">
+                <div className="stack-card-text">
+                  <div className="bento-step-num" style={{ color: '#c084fc' }}>02</div>
+                  <div className="bento-cat-tag" style={{ color: '#c084fc' }}>SURVEIL</div>
+                  <h3 className="bento-title">Application Store Surveillance</h3>
+                  <p className="bento-desc">
+                    Uncover deceptive app listings, cloned APKs, publisher mismatches, and repackaged trojans mimicking your brand on mobile marketplaces.
+                  </p>
+                </div>
+                <div className="stack-card-img-wrap">
+                  <img src="/appstore_card.jpg" alt="App store surveillance dashboard" />
+                </div>
+              </div>
+            </ScrollStackItem>
 
-          {/* Card 2 – App Store (right col top) */}
-          <div className="bento-card bento-card-2">
-            <div className="bento-text-block-full">
-              <div className="bento-step-num" style={{ color: '#c084fc' }}>02</div>
-              <div className="bento-cat-tag" style={{ color: '#c084fc' }}>SURVEIL</div>
-              <h3 className="bento-title">Application Store Surveillance</h3>
-              <p className="bento-desc">
-                Uncover deceptive app listings, cloned APKs, publisher mismatches, and repackaged trojans mimicking your brand on mobile marketplaces.
-              </p>
-            </div>
-            <div style={{ padding: '0 16px 20px', flex: 'none' }}>
-              <img
-                src="/appstore_card.jpg"
-                alt="App store surveillance dashboard"
-                style={{
-                  width: '100%',
-                  borderRadius: '12px',
-                  objectFit: 'cover',
-                  height: '140px',
-                  opacity: 0.88,
-                  transition: 'opacity 0.25s ease, transform 0.35s ease',
-                }}
-              />
-            </div>
-          </div>
+            {/* Card 3 – Risk Scoring */}
+            <ScrollStackItem itemClassName="capabilities-stack-card card-risk">
+              <div className="stack-card-content">
+                <div className="stack-card-text">
+                  <div className="bento-step-num" style={{ color: '#fbbf24' }}>03</div>
+                  <div className="bento-cat-tag" style={{ color: '#fbbf24' }}>ANALYZE</div>
+                  <h3 className="bento-title">Explainable Risk Scoring</h3>
+                  <p className="bento-desc">
+                    Transparent priorities (0–100) based on perceptual ImageHash visual marks, token ratios, and developer verification—no black-box guesswork.
+                  </p>
+                </div>
+                <div className="stack-card-img-wrap">
+                  <img src="/risk_card.jpg" alt="Risk scoring analytics dashboard" />
+                </div>
+              </div>
+            </ScrollStackItem>
 
-          {/* Card 3 – Risk Scoring (left col bottom) */}
-          <div className="bento-card bento-card-3">
-            <div className="bento-text-block-full">
-              <div className="bento-step-num" style={{ color: '#fbbf24' }}>03</div>
-              <div className="bento-cat-tag" style={{ color: '#fbbf24' }}>ANALYZE</div>
-              <h3 className="bento-title">Explainable Risk Scoring</h3>
-              <p className="bento-desc">
-                Transparent priorities (0–100) based on perceptual ImageHash visual marks, token ratios, and developer verification—no black-box guesswork.
-              </p>
-            </div>
-            <div style={{ padding: '0 16px 20px', flex: 'none' }}>
-              <img
-                src="/risk_card.jpg"
-                alt="Risk scoring analytics dashboard"
-                style={{
-                  width: '100%',
-                  borderRadius: '12px',
-                  objectFit: 'cover',
-                  height: '120px',
-                  opacity: 0.88,
-                  transition: 'opacity 0.25s ease, transform 0.35s ease',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Card 4 – Reports (2-col wide, flipped) */}
-          <div className="bento-card bento-card-4">
-            <div className="bento-text-block">
-              <div className="bento-step-num" style={{ color: '#34d399' }}>04</div>
-              <div className="bento-cat-tag" style={{ color: '#34d399' }}>EXPORT</div>
-              <h3 className="bento-title">Downloadable Scan Reports</h3>
-              <p className="bento-desc">
-                Instantly export audit-ready PDF Threat Dossiers and CSV spreadsheets for takedown requests, brand legal teams, and executive briefings.
-              </p>
-            </div>
-            <div className="bento-img-block">
-              <img src="/reports_card.jpg" alt="Brand threat dossier report" />
-            </div>
-          </div>
-
+            {/* Card 4 – Reports */}
+            <ScrollStackItem itemClassName="capabilities-stack-card card-reports">
+              <div className="stack-card-content">
+                <div className="stack-card-text">
+                  <div className="bento-step-num" style={{ color: '#34d399' }}>04</div>
+                  <div className="bento-cat-tag" style={{ color: '#34d399' }}>EXPORT</div>
+                  <h3 className="bento-title">Downloadable Scan Reports</h3>
+                  <p className="bento-desc">
+                    Instantly export audit-ready PDF Threat Dossiers and CSV spreadsheets for takedown requests, brand legal teams, and executive briefings.
+                  </p>
+                </div>
+                <div className="stack-card-img-wrap">
+                  <img src="/reports_card.jpg" alt="Brand threat dossier report" />
+                </div>
+              </div>
+            </ScrollStackItem>
+          </ScrollStack>
         </div>
       </section>
 
