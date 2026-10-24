@@ -8,8 +8,7 @@ import {
   ShieldCheck,
   AlertTriangle,
   Settings,
-  Radar,
-  Radio
+  Radar
 } from 'lucide-react';
 
 export default function Sidebar({ mobileOpen, onCloseMobile, openFindingsCount = 0 }) {
@@ -108,21 +107,6 @@ export default function Sidebar({ mobileOpen, onCloseMobile, openFindingsCount =
               </div>
             ))}
           </nav>
-        </div>
-
-        {/* Bottom Informational Card (Matching Reference Dashboard) */}
-        <div className="sidebar-promo-card">
-          <div className="promo-icon-badge">
-            <Radio size={16} />
-          </div>
-          <h4 className="promo-title">Stay Ahead of Digital Threats</h4>
-          <p className="promo-desc">
-            Monitor suspicious profiles and applications from one place.
-          </p>
-          <div className="promo-tag">
-            <span className="pulse-dot" />
-            <span>Active Defense Engine</span>
-          </div>
         </div>
       </aside>
     </>
