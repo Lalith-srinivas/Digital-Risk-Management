@@ -171,115 +171,69 @@ export default function BrandScan() {
 
       {/* Left Floating Brand Rail */}
       <aside className="brand-scan-side-rail" aria-label="Brand Security Highlights">
-        {/* Card 1: Live Threat Radar */}
-        <div className="brand-floating-card brand-float-slow">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'rgba(79, 70, 229, 0.1)',
-                color: '#4f46e5',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Radio size={17} />
-              </div>
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>Threat Radar</div>
-                <div style={{ fontSize: '11px', color: '#64748b' }}>Live surveillance feeds</div>
-              </div>
+        {/* Shield 1: Luminous SOC 360 Primary Guardian Shield */}
+        <div className="floating-brand-orb float-anim-1">
+          <div className="orb-glass-inner">
+            <div className="orb-icon-glow">
+              <ShieldCheck size={26} />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span className="radar-pulse-dot" />
-              <span style={{ fontSize: '11px', fontWeight: '600', color: '#059669' }}>Active</span>
+            <div className="orb-badge-text">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span className="orb-title">SOC 360 Shield</span>
+                <span className="shield-tag-badge">Guardian</span>
+              </div>
+              <span className="orb-sub">Continuous Brand Defense</span>
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '7px 10px',
-              background: '#f8fafc',
-              borderRadius: '8px',
-              fontSize: '11px',
-              color: '#334155',
-              border: '1px solid #e2e8f0'
-            }}>
-              <Share2 size={13} color="#4f46e5" />
-              <span>Social Accounts (X, Telegram, IG)</span>
+          <div className="orb-orbit-ring" />
+          <div className="orb-footer-status">
+            <span className="radar-pulse-dot" />
+            <span style={{ fontSize: '11px', fontWeight: '600', color: '#059669' }}>Active Surveillance</span>
+          </div>
+        </div>
+
+        {/* Floating Element 2: Threat Radar Beacon */}
+        <div className="floating-brand-orb float-anim-2">
+          <div className="orb-glass-inner" style={{ marginBottom: '10px' }}>
+            <div className="radar-ping-container">
+              <Radio size={19} color="#4f46e5" />
+              <span className="beacon-dot" />
             </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '7px 10px',
-              background: '#f8fafc',
-              borderRadius: '8px',
-              fontSize: '11px',
-              color: '#334155',
-              border: '1px solid #e2e8f0'
-            }}>
-              <Smartphone size={13} color="#06b6d4" />
-              <span>Mobile Stores & APK Mirrors</span>
+            <div className="orb-badge-text">
+              <span className="orb-title">Active Threat Radar</span>
+              <span className="orb-sub">Multi-Vector Surveillance</span>
             </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '7px 10px',
-              background: '#f8fafc',
-              borderRadius: '8px',
-              fontSize: '11px',
-              color: '#334155',
-              border: '1px solid #e2e8f0'
-            }}>
-              <Globe size={13} color="#8b5cf6" />
-              <span>Look-alike Typosquats</span>
+          </div>
+          <div className="vector-chips-list">
+            <div className="vector-chip">
+              <Share2 size={12} color="#4f46e5" />
+              <span>Social Media (X, TG, IG)</span>
+            </div>
+            <div className="vector-chip">
+              <Smartphone size={12} color="#0891b2" />
+              <span>App Stores & APK Mirrors</span>
+            </div>
+            <div className="vector-chip">
+              <Globe size={12} color="#7c3aed" />
+              <span>Typosquats & Phishing</span>
             </div>
           </div>
         </div>
 
-        {/* Card 2: AI Multi-Signal Engine */}
-        <div className="brand-floating-card brand-float-delayed">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'rgba(124, 58, 237, 0.1)',
-              color: '#7c3aed',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Zap size={17} />
-            </div>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>Detection Engine</div>
-              <div style={{ fontSize: '11px', color: '#64748b' }}>Multi-signal heuristics</div>
-            </div>
+        {/* Floating Element 3: Zero-Persistence Privacy Shield */}
+        <div className="floating-brand-pill float-anim-3">
+          <div className="pill-icon-circle bg-emerald">
+            <Lock size={13} color="#059669" />
           </div>
-          <p style={{ fontSize: '12px', color: '#475569', lineHeight: 1.45, margin: '0 0 10px' }}>
-            Combines <strong>RapidFuzz</strong> token sort similarity, <strong>ImageHash</strong> perceptual visual distance, and official exclusions.
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            <span style={{ fontSize: '10px', fontWeight: '600', padding: '3px 8px', background: '#ede9fe', color: '#6d28d9', borderRadius: '6px' }}>
-              Lexical Similarity
-            </span>
-            <span style={{ fontSize: '10px', fontWeight: '600', padding: '3px 8px', background: '#cffafe', color: '#0e7490', borderRadius: '6px' }}>
-              Logo Perceptual Hash
-            </span>
-          </div>
+          <span className="pill-label">Zero-Persistence Privacy Shield</span>
         </div>
 
-        {/* Pill 3: Enterprise Compliance Seal */}
-        <div className="brand-floating-pill brand-float-subtle">
-          <ShieldCheck size={16} color="#4f46e5" />
-          <span>Zero-Persistence Privacy Shield</span>
+        {/* Floating Element 4: Identity Verification Seal */}
+        <div className="floating-brand-pill float-anim-5">
+          <div className="pill-icon-circle bg-indigo">
+            <CheckCircle2 size={13} color="#4f46e5" />
+          </div>
+          <span className="pill-label">Cryptographic Asset Baseline</span>
         </div>
       </aside>
 
@@ -691,85 +645,73 @@ export default function BrandScan() {
 
       {/* Right Floating Brand Rail */}
       <aside className="brand-scan-side-rail" aria-label="Detection Intelligence Metrics">
-        {/* Card 1: SOC 360 Protection Intelligence */}
-        <div className="brand-floating-card brand-float-delayed">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'rgba(16, 185, 129, 0.1)',
-              color: '#059669',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Activity size={17} />
+        {/* Shield 2: Threat Alert & Impersonation Defense Shield */}
+        <div className="floating-brand-orb float-anim-2">
+          <div className="orb-glass-inner">
+            <div className="orb-icon-glow glow-red">
+              <ShieldAlert size={26} />
             </div>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>Threat Telemetry</div>
-              <div style={{ fontSize: '11px', color: '#64748b' }}>Digital Risk Operations</div>
+            <div className="orb-badge-text">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span className="orb-title">Impersonation Shield</span>
+                <span className="shield-tag-badge alert-tag">Counter-Threat</span>
+              </div>
+              <span className="orb-sub">Heuristic Threat Interception</span>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-            <div style={{ padding: '8px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-              <div style={{ fontSize: '18px', fontWeight: '800', color: '#4f46e5' }}>99.8%</div>
-              <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '500' }}>Detection Precision</div>
-            </div>
-            <div style={{ padding: '8px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-              <div style={{ fontSize: '18px', fontWeight: '800', color: '#059669' }}>&lt; 15s</div>
-              <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '500' }}>Discovery Speed</div>
-            </div>
-          </div>
-          <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className="radar-pulse-dot" style={{ background: '#4f46e5' }} />
-            <span>5 Connectors Synchronized</span>
+          <div className="orb-orbit-ring ring-cyan" />
+          <div className="orb-footer-status">
+            <span className="radar-pulse-dot" style={{ background: '#ef4444' }} />
+            <span style={{ fontSize: '11px', fontWeight: '600', color: '#dc2626' }}>Real-time Risk Scoring</span>
           </div>
         </div>
 
-        {/* Card 2: Legal Takedowns & Evidence Dossiers */}
-        <div className="brand-floating-card brand-float-slow">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'rgba(6, 182, 212, 0.1)',
-              color: '#0891b2',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <FileText size={17} />
+        {/* Floating Element 5: Dual AI Matching Engine */}
+        <div className="floating-brand-orb float-anim-1">
+          <div className="orb-glass-inner" style={{ marginBottom: '10px' }}>
+            <div className="orb-icon-circle bg-purple">
+              <Zap size={18} color="#7c3aed" />
             </div>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>Takedown Dossiers</div>
-              <div style={{ fontSize: '11px', color: '#64748b' }}>Court-ready evidence</div>
+            <div className="orb-badge-text">
+              <span className="orb-title">Dual AI Engine</span>
+              <span className="orb-sub">Multi-Signal Detection</span>
             </div>
           </div>
-          <p style={{ fontSize: '12px', color: '#475569', lineHeight: 1.45, margin: '0 0 10px' }}>
-            Generates standardized legal takedown notices with cryptographically verifiable timestamps and candidate snapshots.
-          </p>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '7px 10px',
-            background: '#ecfeff',
-            borderRadius: '8px',
-            fontSize: '11px',
-            color: '#0e7490',
-            fontWeight: '600'
-          }}>
-            <span>One-Click Export</span>
-            <span>PDF & CSV Dossier</span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            <span className="engine-chip chip-purple">RapidFuzz Lexical</span>
+            <span className="engine-chip chip-cyan">ImageHash Perceptual</span>
           </div>
         </div>
 
-        {/* Pill 3: Enterprise Asset Baseline */}
-        <div className="brand-floating-pill brand-float-subtle">
-          <Lock size={16} color="#0891b2" />
-          <span>Enterprise Asset Isolation</span>
+        {/* Floating Element 6: Detection Telemetry Card */}
+        <div className="floating-brand-orb float-anim-4">
+          <div className="orb-glass-inner" style={{ marginBottom: '10px' }}>
+            <div className="orb-icon-circle bg-emerald">
+              <Activity size={18} color="#059669" />
+            </div>
+            <div className="orb-badge-text">
+              <span className="orb-title">Telemetry Metrics</span>
+              <span className="orb-sub">SOC 360 Operations</span>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div className="telemetry-stat-box">
+              <div className="stat-val stat-val-indigo">99.8%</div>
+              <div className="stat-lbl">Precision Rate</div>
+            </div>
+            <div className="telemetry-stat-box">
+              <div className="stat-val stat-val-emerald">&lt; 15s</div>
+              <div className="stat-lbl">Discovery Speed</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Floating Element 7: Legal Takedown Pill */}
+        <div className="floating-brand-pill float-anim-3">
+          <div className="pill-icon-circle bg-cyan">
+            <Sparkles size={13} color="#0891b2" />
+          </div>
+          <span className="pill-label">One-Click DMCA Dossier Export</span>
         </div>
       </aside>
     </div>
