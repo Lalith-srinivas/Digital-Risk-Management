@@ -32,6 +32,7 @@ class DetectionResult(BaseModel):
     evidence: Dict[str, Any] = Field(default_factory=dict, description="Structured signals and flags")
     explanation: str = Field(..., description="Human-readable risk assessment rationale")
     review_recommendation: str = Field(..., description="'Review', 'Escalate', or 'Ignore'")
+    is_official_match: bool = Field(default=False, description="Whether candidate matches verified official brand entity")
     is_temporary_adapter: bool = True
     engine_name: str = "soc360_internal_adapter_v1"
 
@@ -86,6 +87,7 @@ class InternalDetectionAdapter(BaseDetectionEngine):
                         },
                         explanation="Verified official brand account. Matches registered official social URL.",
                         review_recommendation="Ignore",
+                        is_official_match=True,
                         is_temporary_adapter=True,
                     )
 
@@ -104,6 +106,7 @@ class InternalDetectionAdapter(BaseDetectionEngine):
                         },
                         explanation="Verified official application matching registered brand app records.",
                         review_recommendation="Ignore",
+                        is_official_match=True,
                         is_temporary_adapter=True,
                     )
             for official_dev in data.official_developers:
@@ -119,6 +122,7 @@ class InternalDetectionAdapter(BaseDetectionEngine):
                         },
                         explanation="Application published by verified official brand developer.",
                         review_recommendation="Ignore",
+                        is_official_match=True,
                         is_temporary_adapter=True,
                     )
 
@@ -311,6 +315,7 @@ class SOC360DetectionEngine(BaseDetectionEngine):
             evidence=evidence_dict,
             explanation=res["explanation"],
             review_recommendation=rec,
+            is_official_match=bool(res.get("is_official_match", False)),
             is_temporary_adapter=False,
             engine_name="soc360_similarity_detection_v2",
         )
