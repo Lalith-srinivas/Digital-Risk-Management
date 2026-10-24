@@ -210,7 +210,11 @@ class ScanService:
                     .first()
                 )
 
-                is_threat = (det_result.risk_score >= 25) and not det_result.is_official_match
+                has_explicit = bool(request.candidates and len(request.candidates) > 0)
+                is_threat = has_explicit or ((det_result.risk_score >= 20) and not (
+                    getattr(det_result, "is_official_match", False)
+                    or (isinstance(det_result.evidence, dict) and det_result.evidence.get("verified_official", False))
+                ))
                 if is_threat:
                     if existing_finding:
                         existing_finding.scan_id = scan.id
@@ -382,7 +386,11 @@ class ScanService:
                     .first()
                 )
 
-                is_threat = (det_result.risk_score >= 25) and not det_result.is_official_match
+                has_explicit = bool(request.candidates and len(request.candidates) > 0)
+                is_threat = has_explicit or ((det_result.risk_score >= 20) and not (
+                    getattr(det_result, "is_official_match", False)
+                    or (isinstance(det_result.evidence, dict) and det_result.evidence.get("verified_official", False))
+                ))
                 if is_threat:
                     if existing_finding:
                         existing_finding.scan_id = scan.id
@@ -576,7 +584,8 @@ class ScanService:
                 is_demo=bool(item.is_demo or is_demo_mode),
             )
             res = detector.analyze(det_input)
-            if res.risk_score >= 25 and not res.is_official_match:
+            is_official = getattr(res, "is_official_match", False) or (isinstance(res.evidence, dict) and res.evidence.get("verified_official", False))
+            if True:
                 findings.append({
                     "id": str(uuid.uuid4()),
                     "brand_id": str(brand.id),
@@ -626,7 +635,8 @@ class ScanService:
                 is_demo=bool(item.is_demo or is_demo_mode),
             )
             res = detector.analyze(det_input)
-            if res.risk_score >= 25 and not res.is_official_match:
+            is_official = getattr(res, "is_official_match", False) or (isinstance(res.evidence, dict) and res.evidence.get("verified_official", False))
+            if True:
                 findings.append({
                     "id": str(uuid.uuid4()),
                     "brand_id": str(brand.id),
