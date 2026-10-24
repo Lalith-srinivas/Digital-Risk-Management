@@ -185,7 +185,6 @@ export default function BrandScan() {
               <span className="orb-sub">Continuous Brand Defense</span>
             </div>
           </div>
-          <div className="orb-orbit-ring" />
           <div className="orb-footer-status">
             <span className="radar-pulse-dot" />
             <span style={{ fontSize: '11px', fontWeight: '600', color: '#059669' }}>Active Surveillance</span>
@@ -659,7 +658,6 @@ export default function BrandScan() {
               <span className="orb-sub">Heuristic Threat Interception</span>
             </div>
           </div>
-          <div className="orb-orbit-ring ring-cyan" />
           <div className="orb-footer-status">
             <span className="radar-pulse-dot" style={{ background: '#ef4444' }} />
             <span style={{ fontSize: '11px', fontWeight: '600', color: '#dc2626' }}>Real-time Risk Scoring</span>

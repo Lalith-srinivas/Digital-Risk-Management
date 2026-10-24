@@ -33,7 +33,6 @@ export default function FloatingBrandShields() {
               <span className="orb-sub">Protected Brand</span>
             </div>
           </div>
-          <div className="orb-orbit-ring" />
         </div>
 
         {/* Floating Element 2: Threat Radar Beacon */}
@@ -93,7 +92,6 @@ export default function FloatingBrandShields() {
               <span className="orb-sub">Rapid Threat Defense</span>
             </div>
           </div>
-          <div className="orb-orbit-ring ring-cyan" />
         </div>
 
         {/* Floating Element 6: RapidFuzz & ImageHash Detection Engine */}

@@ -1989,29 +1989,6 @@
 .bg-violet { background: rgba(139, 92, 246, 0.12); }
 .bg-blue { background: rgba(37, 99, 235, 0.12); }
 
-/* Rotating Orbit Rings around shields */
-.orb-orbit-ring {
-  position: absolute;
-  top: -5px;
-  left: -5px;
-  right: -5px;
-  bottom: -5px;
-  border: 1px dashed rgba(99, 102, 241, 0.35);
-  border-radius: 20px;
-  pointer-events: none;
-  animation: orbitRotateAnim 20s linear infinite;
-}
-
-.orb-orbit-ring.ring-cyan {
-  border-color: rgba(6, 182, 212, 0.35);
-  animation-duration: 24s;
-  animation-direction: reverse;
-}
-
-@keyframes orbitRotateAnim {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
 
 /* Floating Pill */
 .floating-brand-pill {
