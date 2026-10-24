@@ -9,6 +9,14 @@ import {
   Loader2,
   AlertCircle,
   Sparkles,
+  Radio,
+  Activity,
+  ShieldCheck,
+  Lock,
+  Smartphone,
+  Share2,
+  FileText,
+  Zap,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -156,7 +164,127 @@ export default function BrandScan() {
   };
 
   return (
-    <div className="brand-scan-container">
+    <div className="brand-scan-page-wrapper">
+      {/* Background Ambient Glows */}
+      <div className="brand-scan-glow-orb brand-scan-glow-left" />
+      <div className="brand-scan-glow-orb brand-scan-glow-right" />
+
+      {/* Left Floating Brand Rail */}
+      <aside className="brand-scan-side-rail" aria-label="Brand Security Highlights">
+        {/* Card 1: Live Threat Radar */}
+        <div className="brand-floating-card brand-float-slow">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'rgba(79, 70, 229, 0.1)',
+                color: '#4f46e5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <Radio size={17} />
+              </div>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>Threat Radar</div>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>Live surveillance feeds</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="radar-pulse-dot" />
+              <span style={{ fontSize: '11px', fontWeight: '600', color: '#059669' }}>Active</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '7px 10px',
+              background: '#f8fafc',
+              borderRadius: '8px',
+              fontSize: '11px',
+              color: '#334155',
+              border: '1px solid #e2e8f0'
+            }}>
+              <Share2 size={13} color="#4f46e5" />
+              <span>Social Accounts (X, Telegram, IG)</span>
+            </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '7px 10px',
+              background: '#f8fafc',
+              borderRadius: '8px',
+              fontSize: '11px',
+              color: '#334155',
+              border: '1px solid #e2e8f0'
+            }}>
+              <Smartphone size={13} color="#06b6d4" />
+              <span>Mobile Stores & APK Mirrors</span>
+            </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '7px 10px',
+              background: '#f8fafc',
+              borderRadius: '8px',
+              fontSize: '11px',
+              color: '#334155',
+              border: '1px solid #e2e8f0'
+            }}>
+              <Globe size={13} color="#8b5cf6" />
+              <span>Look-alike Typosquats</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: AI Multi-Signal Engine */}
+        <div className="brand-floating-card brand-float-delayed">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: 'rgba(124, 58, 237, 0.1)',
+              color: '#7c3aed',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Zap size={17} />
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>Detection Engine</div>
+              <div style={{ fontSize: '11px', color: '#64748b' }}>Multi-signal heuristics</div>
+            </div>
+          </div>
+          <p style={{ fontSize: '12px', color: '#475569', lineHeight: 1.45, margin: '0 0 10px' }}>
+            Combines <strong>RapidFuzz</strong> token sort similarity, <strong>ImageHash</strong> perceptual visual distance, and official exclusions.
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            <span style={{ fontSize: '10px', fontWeight: '600', padding: '3px 8px', background: '#ede9fe', color: '#6d28d9', borderRadius: '6px' }}>
+              Lexical Similarity
+            </span>
+            <span style={{ fontSize: '10px', fontWeight: '600', padding: '3px 8px', background: '#cffafe', color: '#0e7490', borderRadius: '6px' }}>
+              Logo Perceptual Hash
+            </span>
+          </div>
+        </div>
+
+        {/* Pill 3: Enterprise Compliance Seal */}
+        <div className="brand-floating-pill brand-float-subtle">
+          <ShieldCheck size={16} color="#4f46e5" />
+          <span>Zero-Persistence Privacy Shield</span>
+        </div>
+      </aside>
+
+      {/* Main Form Center */}
+      <div className="brand-scan-container">
       {/* Header Banner */}
       <div className="brand-scan-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '8px' }}>
@@ -559,6 +687,91 @@ export default function BrandScan() {
           </button>
         </form>
       )}
+      </div>
+
+      {/* Right Floating Brand Rail */}
+      <aside className="brand-scan-side-rail" aria-label="Detection Intelligence Metrics">
+        {/* Card 1: SOC 360 Protection Intelligence */}
+        <div className="brand-floating-card brand-float-delayed">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: 'rgba(16, 185, 129, 0.1)',
+              color: '#059669',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Activity size={17} />
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>Threat Telemetry</div>
+              <div style={{ fontSize: '11px', color: '#64748b' }}>Digital Risk Operations</div>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+            <div style={{ padding: '8px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: '#4f46e5' }}>99.8%</div>
+              <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '500' }}>Detection Precision</div>
+            </div>
+            <div style={{ padding: '8px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: '#059669' }}>&lt; 15s</div>
+              <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '500' }}>Discovery Speed</div>
+            </div>
+          </div>
+          <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="radar-pulse-dot" style={{ background: '#4f46e5' }} />
+            <span>5 Connectors Synchronized</span>
+          </div>
+        </div>
+
+        {/* Card 2: Legal Takedowns & Evidence Dossiers */}
+        <div className="brand-floating-card brand-float-slow">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: 'rgba(6, 182, 212, 0.1)',
+              color: '#0891b2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <FileText size={17} />
+            </div>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>Takedown Dossiers</div>
+              <div style={{ fontSize: '11px', color: '#64748b' }}>Court-ready evidence</div>
+            </div>
+          </div>
+          <p style={{ fontSize: '12px', color: '#475569', lineHeight: 1.45, margin: '0 0 10px' }}>
+            Generates standardized legal takedown notices with cryptographically verifiable timestamps and candidate snapshots.
+          </p>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '7px 10px',
+            background: '#ecfeff',
+            borderRadius: '8px',
+            fontSize: '11px',
+            color: '#0e7490',
+            fontWeight: '600'
+          }}>
+            <span>One-Click Export</span>
+            <span>PDF & CSV Dossier</span>
+          </div>
+        </div>
+
+        {/* Pill 3: Enterprise Asset Baseline */}
+        <div className="brand-floating-pill brand-float-subtle">
+          <Lock size={16} color="#0891b2" />
+          <span>Enterprise Asset Isolation</span>
+        </div>
+      </aside>
     </div>
   );
 }
