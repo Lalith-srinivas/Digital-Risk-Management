@@ -89,7 +89,7 @@ function normalizeFinding(f) {
     ...f,
     id: String(f.id),
     brandId: String(f.brand_id || f.brandId || ''),
-    brandName: f.brand_name || (f.brand && f.brand.name) || brand.name || f.brandName || (f.brand_id ? 'Protected Brand' : ''),
+    brandName: brand.name || f.brandName || (f.brand_id ? 'Protected Brand' : ''),
     candidateName: cand.candidate_name || f.candidate_name || f.candidateName || 'Candidate Identity',
     candidateHandle: cand.username || cand.package_identifier || f.candidateHandle || f.packageId || '',
     candidateUrl: cand.source_url || f.candidateUrl || '',
@@ -108,7 +108,7 @@ function normalizeFinding(f) {
     isDemoData: Boolean(f.is_demo || f.isDemoData),
     brandDetails: {
       id: String(f.brand_id || f.brandId || ''),
-      name: f.brand_name || (f.brand && f.brand.name) || brand.name || f.brandName || 'Protected Brand',
+      name: brand.name || f.brandName || 'Protected Brand',
       website: brand.website || '',
       logo: brand.logo_url || brand.logo || '',
       officialDevelopers: brand.official_developers || brand.developerNames || [],

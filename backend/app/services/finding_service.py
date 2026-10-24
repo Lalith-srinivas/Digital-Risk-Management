@@ -27,7 +27,7 @@ class FindingService:
     def get_by_id(db: Session, finding_id: uuid.UUID, user_id: Optional[uuid.UUID] = None) -> Optional[Finding]:
         query = (
             db.query(Finding)
-            .options(joinedload(Finding.candidate), joinedload(Finding.brand))
+            .options(joinedload(Finding.candidate))
             .filter(Finding.id == finding_id)
         )
         if user_id:
@@ -48,7 +48,7 @@ class FindingService:
         page_size: int = 20,
         user_id: Optional[uuid.UUID] = None,
     ) -> Tuple[List[Finding], int]:
-        query = db.query(Finding).options(joinedload(Finding.candidate), joinedload(Finding.brand))
+        query = db.query(Finding).options(joinedload(Finding.candidate))
 
         if user_id:
             query = query.filter(Finding.user_id == user_id)
