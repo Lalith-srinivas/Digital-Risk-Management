@@ -69,8 +69,31 @@ export default function Findings() {
         api.getBrands()
       ]);
 
-      setFindings(findingsRes.data || []);
-      setBrands(brandsRes.data || []);
+      const allFindings = findingsRes.data || [];
+      const allBrands = brandsRes.data || [];
+
+      // Only display candidates that have actual similarity / threat signals (score >= 20)
+      // Completely filters out unrelated search noise (e.g. 0-score apps like Beynex, HEX Editor)
+      const cleanFindings = allFindings.filter(f => {
+        if (filterRisk === 'low') return true;
+        return (f.riskScore !== undefined ? f.riskScore : (f.risk_score || 0)) >= 20;
+      });
+
+      // Resolve brand name from brands list if finding has generic 'Protected Brand'
+      const brandMap = new Map(allBrands.map(b => [String(b.id), b.name]));
+      const resolvedFindings = cleanFindings.map(f => {
+        let bName = f.brandName;
+        if (!bName || bName === 'Protected Brand') {
+          bName = brandMap.get(String(f.brandId || f.brand_id)) || (f.brand && f.brand.name) || bName || 'Protected Brand';
+        }
+        return {
+          ...f,
+          brandName: bName
+        };
+      });
+
+      setFindings(resolvedFindings);
+      setBrands(allBrands);
       setIsDemo(findingsRes.isDemoData || false);
     } catch (err) {
       console.error('Error loading findings queue:', err);

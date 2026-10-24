@@ -34,6 +34,10 @@ class Finding(Base):
     scan = relationship("Scan", back_populates="findings")
 
     @property
+    def brand_name(self) -> str:
+        return self.brand.name if self.brand else "Protected Brand"
+
+    @property
     def investigation_history(self) -> list:
         if isinstance(self.evidence, dict) and "investigation_history" in self.evidence and self.evidence["investigation_history"]:
             return self.evidence["investigation_history"]

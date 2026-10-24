@@ -56,6 +56,7 @@ class FindingResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     candidate: Optional[CandidateResponse] = None
+    brand_name: Optional[str] = Field(None, description="Protected brand name")
     investigation_history: List[Dict[str, Any]] = Field(default_factory=list, description="Audit trail of investigation history")
 
     model_config = ConfigDict(from_attributes=True)

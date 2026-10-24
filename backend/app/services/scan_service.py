@@ -200,7 +200,7 @@ class ScanService:
                 )
                 det_result = detector.analyze(det_input)
 
-                # 4. Finding Deduplication / Upsert
+                # 4. Finding Deduplication / Upsert (Only candidates meeting threat threshold >= 25 become Findings)
                 existing_finding = (
                     db.query(Finding)
                     .filter(
@@ -210,34 +210,39 @@ class ScanService:
                     .first()
                 )
 
-                if existing_finding:
-                    existing_finding.scan_id = scan.id
-                    existing_finding.risk_score = det_result.risk_score
-                    existing_finding.risk_level = det_result.risk_level
-                    existing_finding.evidence = det_result.evidence
-                    existing_finding.explanation = det_result.explanation
-                    existing_finding.is_demo = bool(item.is_demo or is_demo_run)
-                    existing_finding.user_id = getattr(brand, "user_id", None)
-                    existing_finding.updated_at = utc_now()
-                    findings.append(existing_finding)
-                else:
-                    new_finding = Finding(
-                        brand_id=brand.id,
-                        candidate_id=cand.id,
-                        scan_id=scan.id,
-                        source_type="social",
-                        risk_score=det_result.risk_score,
-                        risk_level=det_result.risk_level,
-                        evidence=det_result.evidence,
-                        explanation=det_result.explanation,
-                        review_status="New",
-                        is_demo=bool(item.is_demo or is_demo_run),
-                        user_id=getattr(brand, "user_id", None),
-                        created_at=utc_now(),
-                        updated_at=utc_now(),
-                    )
-                    db.add(new_finding)
-                    findings.append(new_finding)
+                is_threat = (det_result.risk_score >= 25) and not det_result.is_official_match
+                if is_threat:
+                    if existing_finding:
+                        existing_finding.scan_id = scan.id
+                        existing_finding.risk_score = det_result.risk_score
+                        existing_finding.risk_level = det_result.risk_level
+                        existing_finding.evidence = det_result.evidence
+                        existing_finding.explanation = det_result.explanation
+                        existing_finding.is_demo = bool(item.is_demo or is_demo_run)
+                        existing_finding.user_id = getattr(brand, "user_id", None)
+                        existing_finding.updated_at = utc_now()
+                        findings.append(existing_finding)
+                    else:
+                        new_finding = Finding(
+                            brand_id=brand.id,
+                            candidate_id=cand.id,
+                            scan_id=scan.id,
+                            source_type="social",
+                            risk_score=det_result.risk_score,
+                            risk_level=det_result.risk_level,
+                            evidence=det_result.evidence,
+                            explanation=det_result.explanation,
+                            review_status="New",
+                            is_demo=bool(item.is_demo or is_demo_run),
+                            user_id=getattr(brand, "user_id", None),
+                            created_at=utc_now(),
+                            updated_at=utc_now(),
+                        )
+                        db.add(new_finding)
+                        findings.append(new_finding)
+                elif existing_finding:
+                    # Remove previously flagged candidate if now below threshold or verified official
+                    db.delete(existing_finding)
 
             # 5. Complete Scan
             scan.status = "completed"
@@ -367,7 +372,7 @@ class ScanService:
                 )
                 det_result = detector.analyze(det_input)
 
-                # 4. Finding Deduplication / Upsert
+                # 4. Finding Deduplication / Upsert (Only candidates meeting threat threshold >= 25 become Findings)
                 existing_finding = (
                     db.query(Finding)
                     .filter(
@@ -377,34 +382,39 @@ class ScanService:
                     .first()
                 )
 
-                if existing_finding:
-                    existing_finding.scan_id = scan.id
-                    existing_finding.risk_score = det_result.risk_score
-                    existing_finding.risk_level = det_result.risk_level
-                    existing_finding.evidence = det_result.evidence
-                    existing_finding.explanation = det_result.explanation
-                    existing_finding.is_demo = bool(item.is_demo or is_demo_run)
-                    existing_finding.user_id = getattr(brand, "user_id", None)
-                    existing_finding.updated_at = utc_now()
-                    findings.append(existing_finding)
-                else:
-                    new_finding = Finding(
-                        brand_id=brand.id,
-                        candidate_id=cand.id,
-                        scan_id=scan.id,
-                        source_type="app",
-                        risk_score=det_result.risk_score,
-                        risk_level=det_result.risk_level,
-                        evidence=det_result.evidence,
-                        explanation=det_result.explanation,
-                        review_status="New",
-                        is_demo=bool(item.is_demo or is_demo_run),
-                        user_id=getattr(brand, "user_id", None),
-                        created_at=utc_now(),
-                        updated_at=utc_now(),
-                    )
-                    db.add(new_finding)
-                    findings.append(new_finding)
+                is_threat = (det_result.risk_score >= 25) and not det_result.is_official_match
+                if is_threat:
+                    if existing_finding:
+                        existing_finding.scan_id = scan.id
+                        existing_finding.risk_score = det_result.risk_score
+                        existing_finding.risk_level = det_result.risk_level
+                        existing_finding.evidence = det_result.evidence
+                        existing_finding.explanation = det_result.explanation
+                        existing_finding.is_demo = bool(item.is_demo or is_demo_run)
+                        existing_finding.user_id = getattr(brand, "user_id", None)
+                        existing_finding.updated_at = utc_now()
+                        findings.append(existing_finding)
+                    else:
+                        new_finding = Finding(
+                            brand_id=brand.id,
+                            candidate_id=cand.id,
+                            scan_id=scan.id,
+                            source_type="app",
+                            risk_score=det_result.risk_score,
+                            risk_level=det_result.risk_level,
+                            evidence=det_result.evidence,
+                            explanation=det_result.explanation,
+                            review_status="New",
+                            is_demo=bool(item.is_demo or is_demo_run),
+                            user_id=getattr(brand, "user_id", None),
+                            created_at=utc_now(),
+                            updated_at=utc_now(),
+                        )
+                        db.add(new_finding)
+                        findings.append(new_finding)
+                elif existing_finding:
+                    # Remove previously flagged candidate if now below threshold or verified official
+                    db.delete(existing_finding)
 
             # 5. Complete Scan
             scan.status = "completed"
@@ -566,34 +576,35 @@ class ScanService:
                 is_demo=bool(item.is_demo or is_demo_mode),
             )
             res = detector.analyze(det_input)
-            findings.append({
-                "id": str(uuid.uuid4()),
-                "brand_id": str(brand.id),
-                "brandName": brand.name,
-                "candidate_name": item.display_name,
-                "candidateName": item.display_name,
-                "candidateHandle": item.username,
-                "username": item.username,
-                "candidateUrl": item.profile_url,
-                "source_url": item.profile_url,
-                "source_type": "social",
-                "sourceType": "social",
-                "platform": item.platform or "Twitter/X",
-                "risk_score": res.risk_score,
-                "riskScore": res.risk_score,
-                "risk_level": res.risk_level,
-                "riskLevel": res.risk_level,
-                "evidence": res.evidence,
-                "explanation": res.explanation,
-                "review_status": "New",
-                "reviewStatus": "New",
-                "is_demo": bool(item.is_demo or is_demo_mode),
-                "isDemo": bool(item.is_demo or is_demo_mode),
-                "is_guest": True,
-                "created_at": utc_now().isoformat(),
-                "detectionDate": utc_now().isoformat(),
-                "avatarUrl": item.image_url or "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96",
-            })
+            if res.risk_score >= 25 and not res.is_official_match:
+                findings.append({
+                    "id": str(uuid.uuid4()),
+                    "brand_id": str(brand.id),
+                    "brandName": brand.name,
+                    "candidate_name": item.display_name,
+                    "candidateName": item.display_name,
+                    "candidateHandle": item.username,
+                    "username": item.username,
+                    "candidateUrl": item.profile_url,
+                    "source_url": item.profile_url,
+                    "source_type": "social",
+                    "sourceType": "social",
+                    "platform": item.platform or "Twitter/X",
+                    "risk_score": res.risk_score,
+                    "riskScore": res.risk_score,
+                    "risk_level": res.risk_level,
+                    "riskLevel": res.risk_level,
+                    "evidence": res.evidence,
+                    "explanation": res.explanation,
+                    "review_status": "New",
+                    "reviewStatus": "New",
+                    "is_demo": bool(item.is_demo or is_demo_mode),
+                    "isDemo": bool(item.is_demo or is_demo_mode),
+                    "is_guest": True,
+                    "created_at": utc_now().isoformat(),
+                    "detectionDate": utc_now().isoformat(),
+                    "avatarUrl": item.image_url or "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=96",
+                })
 
         # 4. Analyze app candidates in memory
         for item in app_items:
@@ -615,37 +626,38 @@ class ScanService:
                 is_demo=bool(item.is_demo or is_demo_mode),
             )
             res = detector.analyze(det_input)
-            findings.append({
-                "id": str(uuid.uuid4()),
-                "brand_id": str(brand.id),
-                "brandName": brand.name,
-                "candidate_name": item.app_name,
-                "candidateName": item.app_name,
-                "candidateHandle": item.package_identifier or "",
-                "packageId": item.package_identifier or "",
-                "package_identifier": item.package_identifier or "",
-                "developer": item.developer_name or "",
-                "developer_name": item.developer_name or "",
-                "candidateUrl": item.store_url,
-                "source_url": item.store_url,
-                "source_type": "app",
-                "sourceType": "app",
-                "platform": item.store_type or "App Marketplace",
-                "risk_score": res.risk_score,
-                "riskScore": res.risk_score,
-                "risk_level": res.risk_level,
-                "riskLevel": res.risk_level,
-                "evidence": res.evidence,
-                "explanation": res.explanation,
-                "review_status": "New",
-                "reviewStatus": "New",
-                "is_demo": bool(item.is_demo or is_demo_mode),
-                "isDemo": bool(item.is_demo or is_demo_mode),
-                "is_guest": True,
-                "created_at": utc_now().isoformat(),
-                "detectionDate": utc_now().isoformat(),
-                "avatarUrl": item.icon_url or "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=96",
-            })
+            if res.risk_score >= 25 and not res.is_official_match:
+                findings.append({
+                    "id": str(uuid.uuid4()),
+                    "brand_id": str(brand.id),
+                    "brandName": brand.name,
+                    "candidate_name": item.app_name,
+                    "candidateName": item.app_name,
+                    "candidateHandle": item.package_identifier or "",
+                    "packageId": item.package_identifier or "",
+                    "package_identifier": item.package_identifier or "",
+                    "developer": item.developer_name or "",
+                    "developer_name": item.developer_name or "",
+                    "candidateUrl": item.store_url,
+                    "source_url": item.store_url,
+                    "source_type": "app",
+                    "sourceType": "app",
+                    "platform": item.store_type or "App Marketplace",
+                    "risk_score": res.risk_score,
+                    "riskScore": res.risk_score,
+                    "risk_level": res.risk_level,
+                    "riskLevel": res.risk_level,
+                    "evidence": res.evidence,
+                    "explanation": res.explanation,
+                    "review_status": "New",
+                    "reviewStatus": "New",
+                    "is_demo": bool(item.is_demo or is_demo_mode),
+                    "isDemo": bool(item.is_demo or is_demo_mode),
+                    "is_guest": True,
+                    "created_at": utc_now().isoformat(),
+                    "detectionDate": utc_now().isoformat(),
+                    "avatarUrl": item.icon_url or "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=96",
+                })
 
         total_candidates = len(social_items) + len(app_items)
 
